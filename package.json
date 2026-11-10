@@ -10,7 +10,7 @@
     "check:contrast": "tsx scripts/check-contrast.ts",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "seed:reset": "tsx --env-file=.env.local scripts/seed-reset.ts",
-    "types": "supabase gen types typescript --remote --schema public > src/types/database.types.ts",
+    "types": "node -e \"require('fs').mkdirSync('src/types',{recursive:true})\" && npx supabase gen types typescript --remote --schema public > src/types/database.types.ts",
     "test": "vitest run"
   },
   "dependencies": {
