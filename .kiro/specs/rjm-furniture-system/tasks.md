@@ -110,94 +110,94 @@ Migration 0012 (2.12) is `[STRETCH]` and can be done whenever a gap opens on Day
 
 > **Gate before 2.1.** Design §7.1 moves `quoted_price`, `unit_cost` and `unit_cost_at_time` off `jobs`/`materials`/`inventory_transactions` and into their own one-to-one tables (`job_pricing`, `material_costs`, `inventory_transaction_costs`), amending Requirements 4.1, 4.5 and 22.1. The design document states this amendment needs the user's approval before any migration that creates those tables is written. Confirm this with the user before starting 2.4. If declined, substitute the role-filtered-views fallback in design §8.3 for tasks 2.4–2.6 and for the grants matrix in 2.13.
 
-- [ ] 2.1 [MUST] Write migration `0001_helpers.sql`
+- [x] 2.1 [MUST] Write migration `0001_helpers.sql`
   - `current_app_role()`, `is_staff()`, `touch_updated_at()`; apply the full §9 seven-box checklist (grants, `revoke … from public, anon` where the function must not be callable directly, plain-English comment, commented smoke query).
   - Requirements: 3.8, 26.6, 26.7
   - Indicators: 18
 
-- [ ] 2.2 [MUST] Write migration `0002_profiles.sql`
+- [x] 2.2 [MUST] Write migration `0002_profiles.sql`
   - `profiles` (id = auth uid, `username` unique, `role`, `email`, `preferences` jsonb, `deactivated_at`) and the `profiles_guard_self_edit` trigger, including its `service_role`/`postgres`/`supabase_admin` exemption.
   - RLS on, explicit grants (narrow column list — no `email` read for anyone but the row's own owner/admin path), policies per the §10 table.
   - Requirements: 3.1, 5.10, 15.8, 22.2, 22.3
   - Indicators: 5, 16
 
-- [ ] 2.3 [MUST] Write migration `0003_customers.sql`
+- [x] 2.3 [MUST] Write migration `0003_customers.sql`
   - `customers` table, RLS, staff-only read/write policies, soft-delete column grant.
   - Requirements: 9.10, 9.11, 22.8
   - Indicators: 15, 16
 
-- [ ] 2.4 [MUST] Write migration `0004_jobs_pricing_history.sql`
+- [x] 2.4 [MUST] Write migration `0004_jobs_pricing_history.sql`
   - `jobs`, `job_pricing`, `job_status_history`, and all four `jobs` triggers in firing order: `jobs_guard_worker_update` → `jobs_set_status_changed_at` → `touch_updated_at` → `jobs_log_status_change` (the last one `security definer`, because `job_status_history` has no client insert grant).
   - RLS, grants and policies per §10 (`jobs_select_all`, `jobs_update_staff`, `jobs_update_assigned_worker`, the staff-only `job_pricing` policies, the select-only `job_status_history` policy).
   - Requirements: 3.2–3.8, 4.1, 4.5, 9.9, 22.1, 22.4, 22.11
   - Indicators: 9, 16, 17, 18
 
-- [ ] 2.5 [MUST] Write migration `0005_materials_costs.sql`
+- [x] 2.5 [MUST] Write migration `0005_materials_costs.sql`
   - `materials`, `material_costs`, `materials_block_stock_write` trigger; the column-level update grant on `materials` deliberately omits `current_stock`.
   - Requirements: 4.1, 10.8, 12.3, 22.1
   - Indicators: 9, 16
 
-- [ ] 2.6 [MUST] Write migration `0006_inventory_transactions.sql`
+- [x] 2.6 [MUST] Write migration `0006_inventory_transactions.sql`
   - `inventory_transactions` (append-only, with the `delta` column) and `inventory_transaction_costs`; no insert/update/delete grant for `authenticated` on either.
   - Requirements: 4.1, 11.8, 22.1, 22.7
   - Indicators: 9
 
-- [ ] 2.7 [MUST] Write migration `0007_codes.sql`
+- [x] 2.7 [MUST] Write migration `0007_codes.sql`
   - `material_code_seq`, `transaction_code_seq`, `job_code_counters`, and `next_job_code()`, `next_material_code()`, `next_transaction_code()` with `revoke execute … from public, anon, authenticated` on all three.
   - Requirements: 9.3, 10.6, 11.7, 22.5, 22.6
   - Indicators: 18
 
-- [ ] 2.8 [MUST] Write migration `0008_stock_rpc.sql`
+- [x] 2.8 [MUST] Write migration `0008_stock_rpc.sql`
   - `record_stock_movement()` exactly per design §12: `security definer`, the `select … for update` row lock, all 11 algorithm steps, all 8 named error codes (`AUTH_REQUIRED` … `INSUFFICIENT_STOCK`).
   - Requirements: 12.1–12.13
   - Indicators: 8, 9, 20
 
-- [ ] 2.9 [MUST] Write migration `0009_job_material_rpcs.sql`
+- [x] 2.9 [MUST] Write migration `0009_job_material_rpcs.sql`
   - `create_job_order()`, `update_job_order()` (with the heal-then-retry counter loop), `update_job_status()`, `upsert_material()` (required `p_unit_cost`, opening-stock call into `record_stock_movement`).
   - Requirements: 9.1–9.9, 10.6, 10.7
   - Indicators: 8, 9, 20
 
-- [ ] 2.10 [MUST] Write migration `0010_views_and_reporting.sql`
+- [x] 2.10 [MUST] Write migration `0010_views_and_reporting.sql`
   - `v_material_status`, `v_jobs_list`, `v_transactions_list` (each with its own `grant select`), `dashboard_summary()`, `report_summary()`, `job_material_cost()`.
   - Requirements: 7.6, 8.5, 11.3, 12.9, 14.4–14.9
   - Indicators: 7, 8, 15
 
-- [ ] 2.11 [MUST] Write migration `0011_usability_feedback.sql`
+- [x] 2.11 [MUST] Write migration `0011_usability_feedback.sql`
   - `usability_feedback` table; self-insert and read-own-rows policy; staff-read-all policy.
   - Requirements: 21.4, 21.5
   - Indicators: 19, 22
 
-- [ ] 2.12 [STRETCH] Write migration `0012_job_tasks.sql` (schema only)
+- [x] 2.12 [STRETCH] Write migration `0012_job_tasks.sql` (schema only)
   - `job_tasks` table with RLS and policies per settled decision D3; no application code reads it in v0.1.
   - Requirements: 22.9
   - Indicators: 18
 
-- [ ] 2.13 [MUST] Review grants and policies across all twelve migrations
+- [x] 2.13 [MUST] Review grants and policies across all twelve migrations
   - Walk the §9 seven-box checklist and the §10 grants matrix object by object; confirm each migration's commented smoke query is present; run the "one allowed, one forbidden, one `anon`-key" spot check for each new table/view against the dev project.
   - Requirements: 3.8, 3.11, 24.10, 26.7
   - Indicators: 16, 17
 
-- [ ] 2.14 [MUST] Write `scripts/seed.ts` and seed the three demo accounts
+- [x] 2.14 [MUST] Write `scripts/seed.ts` and seed the three demo accounts
   - Admin API create-or-update for owner/admin/worker (§21.2's table); profile upsert with role-appropriate default preferences (`simple_mode: true` for the worker); print the login table for the README.
   - Requirements: 15.13, 23.1–23.5
   - Indicators: 5, 22
 
-- [ ] 2.15 [MUST] Write `supabase/seed/010_business_data.sql` and seed the business data
+- [x] 2.15 [MUST] Write `supabase/seed/010_business_data.sql` and seed the business data
   - The block-0 guard, then customers → materials (inserted with final `current_stock`) → jobs → `job_pricing` → the 109-row ledger (64 opening `adjustment` rows + 45 movement rows) → `inventory_transaction_costs` → the two consistency/date-centring assertions → the three counter catch-up statements, per design §21.3.
   - Requirements: 23.6–23.9
   - Indicators: 19, 22
 
-- [ ] 2.16 [MUST] Write `scripts/seed-reset.ts` and generate the TypeScript types
+- [x] 2.16 [MUST] Write `scripts/seed-reset.ts` and generate the TypeScript types
   - `seed-reset.ts` deletes the seeded UUID ranges and re-runs `supabase db push --include-seed --yes`; `npm run types` writes `src/types/database.types.ts`.
   - Requirements: 22.12, 23.9
   - Indicators: 18
 
-- [ ] 2.17 [MUST] Build the Settings page with working preferences
+- [x] 2.17 [MUST] Build the Settings page with working preferences
   - `/settings`: the four 2×2 cards (Language, Text Size, Display, Accessibility) plus the Simple mode toggle; `PreferenceForm` and the `savePreferences` server action; the `html[data-*]` attributes and the `prefers-reduced-motion` media-query override; the bottom "Save Preferences" bar.
   - Requirements: 15.1–15.16, 22.3, 20.13
   - Indicators: 1, 4, 5, 10
 
-- [ ] 2.18 [MUST] Append the Phase 2 sections to the two running documents
+- [x] 2.18 [MUST] Append the Phase 2 sections to the two running documents
   - Add the Phase 2 entries to `docs/design-rationale.md` (the money-tables schema amendment, seed naming choices) and to `docs/evaluation-traceability.md` (evidence for indicators 5, 7, 8, 9, 15, 16, 17, 18, 19, 20, 22 advanced so far).
   - Requirements: 25.2, 25.4, 25.11
   - Indicators: 17, 19
