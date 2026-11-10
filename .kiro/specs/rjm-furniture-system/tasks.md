@@ -31,73 +31,73 @@ Migration 0012 (2.12) is `[STRETCH]` and can be done whenever a gap opens on Day
 
 ## Phase 1 — Scaffold, tokens, layout shell, i18n, auth
 
-- [ ] 1.1 [MUST] Scaffold the Next.js project and the git repository
+- [x] 1.1 [MUST] Scaffold the Next.js project and the git repository
   - Create the App Router project (TypeScript strict, Turbopack) and install the mandated stack exactly as versioned in design §2: Tailwind v4 + `@tailwindcss/postcss`, `shadcn` CLI (`--base radix`), `lucide-react`, `@supabase/supabase-js`, `@supabase/ssr`, `next-intl`, `react-hook-form` + `@hookform/resolvers` + `zod`, `sonner`, `vitest`, `@playwright/test` + `@axe-core/playwright`, `eslint-plugin-jsx-a11y`, `supabase` CLI, `tsx`.
   - `git init`; add `.gitignore` (`node_modules`, `.next`, `.env*.local`, `playwright-report`, `test-results`); first commit.
   - Requirements: 24.1, 24.2, 26.10
   - Indicators: 12, 18
 
-- [ ] 1.2 [MUST] Create the env files and the two-tier env validation
+- [x] 1.2 [MUST] Create the env files and the two-tier env validation
   - `.env.local` (project URL + publishable key, `SUPABASE_SECRET_KEY=` left blank), `.env.example` (placeholders only), per design §2's exact four variables.
   - `src/lib/env.ts`: `publicEnv` validated eagerly at module load; `requireSecretKey()` validated lazily and only inside `admin.ts`, the admin API route and `scripts/seed.ts`.
   - Requirements: 26.1, 26.2, 26.3, 26.4, 26.5
   - Indicators: 18
 
-- [ ] 1.3 [MUST] Declare the design-token system
+- [x] 1.3 [MUST] Declare the design-token system
   - `src/app/globals.css`: the full Dusk/Navy/Orange 50–900 ramps, the status-colour pairs, `--hc-text`/`--hc-sidebar`, the semantic shadcn tokens, and the `@theme inline` type-scale/spacing/radius tokens, exactly as design §5.1–§5.3.
   - `src/lib/design-tokens.ts`: export `TOKENS` and `PAIRINGS` matching the §5.4 contrast table (52 rows) so the checker in 1.4 has data to check.
   - Requirements: 18.1–18.8, 17.1, 17.4
   - Indicators: 1, 4, 11, 12, 13
 
-- [ ] 1.4 [MUST] Build the contrast-checking script
+- [x] 1.4 [MUST] Build the contrast-checking script
   - `scripts/check-contrast.ts`: compute each `PAIRINGS` ratio with the WCAG relative-luminance formula, assert every `TOKENS` hex appears in `globals.css` under its primary name, rewrite the `<!-- contrast:start -->…<!-- contrast:end -->` block in `docs/accessibility-report.md`, exit 1 on a failed pairing or a hex-name drift.
   - Add the `check:contrast` npm script; a Vitest unit test pins `contrastRatio()` against the published reference values (black/white = 21, `#777`/white = 4.48).
   - Requirements: 18.5, 18.6, 18.7, 24.8, 17.12
   - Indicators: 1, 14
 
-- [ ] 1.5 [MUST] Generate the shadcn components and pin their accessibility defaults
+- [x] 1.5 [MUST] Generate the shadcn components and pin their accessibility defaults
   - `npx shadcn add` for button, input, textarea, select, checkbox, radio-group, switch, card, table, dialog, alert-dialog, dropdown-menu, badge, sonner, skeleton, tabs, accordion, popover, tooltip, pagination, progress.
   - Fix the allowed variants/sizes from design §6.1 in the generated component files (44 × 44 px minimum on every button size; `outline`/`secondary` edges on `--input`, not shadcn's default `--border`).
   - Requirements: 17.2, 18.8, 18.9
   - Indicators: 2, 12
 
-- [ ] 1.6 [MUST] Build `BrandLogo` and the application-shell components
+- [x] 1.6 [MUST] Build `BrandLogo` and the application-shell components
   - `src/components/layout/{AppShell,Sidebar,TopBar,MobileNav,SkipLink,FeedbackBox}.tsx`; `Sidebar` renders the exact nav array from design §20 (Dashboard, Job Orders, indented Customers, Inventory, Inventory Transactions, Low-Stock Alerts, Reports, Settings, Users, Feedback) plus the dashed feedback box and Logout; `BrandLogo` per design §5.7 (navy rounded tile, fixed 40/64 px, `alt="RJM Furniture logo"`).
   - `src/components/patterns/{PageHeader,Toolbar,DataTable,EmptyState,StatusBadge,StatCard,SectionCard,ConfirmDialog,FormField,StepForm,ErrorCard,UndoToast}.tsx` per design §6.2.
   - Requirements: 6.1–6.12, 17.5, 17.7, 17.8, 17.9, 17.10, 18.10, 18.11, 18.12, 19.1–19.6
   - Indicators: 1, 2, 3, 7, 8, 11, 12, 13, 14, 21
 
-- [ ] 1.7 [MUST] Set up `next-intl` with the cookie-based locale
+- [x] 1.7 [MUST] Set up `next-intl` with the cookie-based locale
   - `messages/en.json`, `messages/fil.json` (header comment in the Filipino file stating the strings are drafts, per 16.7); `src/i18n/request.ts` reading the `locale` cookie (no `[locale]` route segment, no `requestLocale`, per design §16.1); `en-PH` date formats and `₱` money formatting.
   - `<html lang>` bound to the active language on every page.
   - Requirements: 16.1, 16.3, 16.5, 16.7, 16.10, 16.11
   - Indicators: 4, 6
 
-- [ ] 1.8 [MUST] Set up the Supabase clients and the auth proxy
+- [x] 1.8 [MUST] Set up the Supabase clients and the auth proxy
   - `src/lib/supabase/{client,server,admin}.ts` (the `getAll`/`setAll` cookie adapter; `admin.ts` behind `import "server-only";`).
   - `src/proxy.ts` (Next 16's renamed middleware) with the `PUBLIC_PATHS = ["/login"]` allowlist and `getClaims()` refresh; `src/app/page.tsx` redirecting to `/dashboard` or `/login`.
   - Requirements: 3.9, 26.1, 26.5
   - Indicators: 2
 
-- [ ] 1.9 [MUST] Build the Login screen and the "Forgot password?" dialog
+- [x] 1.9 [MUST] Build the Login screen and the "Forgot password?" dialog
   - `/login`: split layout (dark panel with the three role chips and dashed card; light card with the sign-in form, show/hide password toggle, Remember me, helper text, footer).
   - `ForgotPasswordDialog`: focus trap, `aria-labelledby`, closes on `Escape`, "Back to login" returns focus to the identifier field; names the owner as the real recovery path.
   - Requirements: 1.1–1.3, 1.8, 1.13, 2.1–2.6, 17.6
   - Indicators: 2, 7, 9, 13
 
-- [ ] 1.10 [MUST] Implement the `signIn` server action
+- [x] 1.10 [MUST] Implement the `signIn` server action
   - `src/actions/auth.ts`: `LoginSchema`; the `@` vs. no-`@` branch (admin-client username lookup, politely degrading to the generic error when `SUPABASE_SECRET_KEY` is blank); a dummy `signInWithPassword` on a not-found lookup to equalise timing; the single `INVALID_CREDENTIALS` result for every failure.
   - `authCookieOptions(remember, options)` helper used by both this action and the proxy; the five-attempts-per-five-minutes throttle cookie.
   - Requirements: 1.4–1.7, 1.9–1.12, 2.5, 2.6
   - Indicators: 2, 9, 16
 
-- [ ] 1.11 [MUST] Implement `requireUser`/`requireRole` and the no-access screen
+- [x] 1.11 [MUST] Implement `requireUser`/`requireRole` and the no-access screen
   - `src/lib/auth.ts`: fail-closed `requireUser()` (`getClaims()`, `cache()`-wrapped profile load, sign-out-then-redirect on a missing or deactivated profile so the proxy sees no session); `requireRole([...])`.
   - `/no-access` page with the "Back to Dashboard" link; confirm restricted data never reaches the page source for a direct navigation to a restricted route.
   - Requirements: 3.9, 3.10
   - Indicators: 2, 16
 
-- [ ] 1.12 [MUST] Append the Phase 1 sections to the two running documents
+- [x] 1.12 [MUST] Append the Phase 1 sections to the two running documents
   - Add the Phase 1 entries to `docs/design-rationale.md` (logo handling, the sidebar's Customers/Feedback additions) and to `docs/evaluation-traceability.md` (screens/files built and evidence so far for indicators 1, 2, 3, 4, 6, 7, 9, 11, 12, 13, 16, 18).
   - Requirements: 25.2, 25.4, 25.11
   - Indicators: 17, 19
