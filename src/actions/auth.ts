@@ -160,3 +160,15 @@ export async function signIn(values: LoginFormValues): Promise<SignInResult> {
 
   redirect("/dashboard");
 }
+
+/**
+ * Bound directly to the Sidebar/TopBar/MobileNav "Logout" controls
+ * (design §3.1 — AppShell's `onLogout` prop). Signing out clears the
+ * session cookies the proxy checks, so the very next request to any
+ * `(app)` route is redirected to `/login` by the proxy itself.
+ */
+export async function signOutAction(): Promise<void> {
+  const supabase = await getServerClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}

@@ -21,3 +21,14 @@ export function authCookieOptions(remember: boolean, options: CookieOptions = {}
 }
 
 export const REMEMBER_COOKIE = "rjm_remember";
+
+/**
+ * Preferences are mirrored into two cookies on save (design §15.1):
+ * `locale` (read by `src/i18n/request.ts`) and `rjm_prefs` (read by the
+ * root layout before the session is resolved, and by the login page,
+ * which has no profile to read). 400 days, like `rjm_remember`, so a
+ * returning visitor's choice survives far longer than any session.
+ */
+export const LOCALE_COOKIE = "locale";
+export const PREFS_COOKIE = "rjm_prefs";
+export const PREFS_COOKIE_MAX_AGE = 60 * 60 * 24 * 400;

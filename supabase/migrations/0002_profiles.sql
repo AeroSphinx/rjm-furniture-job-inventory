@@ -91,8 +91,12 @@ alter table public.profiles enable row level security;
 -- Column-scoped on purpose (§8.2): the same rule applies to every signed-in
 -- user, so a column grant is the right tool. `email` is unreachable from any
 -- client — it is a login-resolution identifier, not public staff data.
-grant select (id, full_name, username, role, created_at, deactivated_at)
+grant select (id, full_name, username, role, preferences, created_at, deactivated_at)
   on public.profiles to authenticated;
+-- `preferences` is readable (not just writable) by any signed-in user: a
+-- user's own accessibility/display settings have to survive signing in on
+-- a brand-new device with no cookie yet (Requirement 15.8), and the value
+-- carries no money, no login identifier, nothing §8 was written to guard.
 grant update (full_name, preferences, updated_at)
   on public.profiles to authenticated;                    -- self-edit path
 grant update (role, username, email, deactivated_at, updated_at)
