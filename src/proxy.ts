@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 import { publicEnv } from "@/lib/env";
+import { authCookieOptions, REMEMBER_COOKIE } from "@/lib/supabase/cookie-options";
 
 /**
  * Next 16's renamed middleware (design §3.4, §14.1). Runs on every request
@@ -25,6 +26,11 @@ export const config = {
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // "Remember me" controls cookie lifetime, not token lifetime (design
+  // §14.2). This cookie holds no identity and no token, so reading it here
+  // is safe even before `getClaims()` has verified anything.
+  const remember = request.cookies.get(REMEMBER_COOKIE)?.value !== "0";
+
   const supabase = createServerClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -34,7 +40,9 @@ export async function proxy(request: NextRequest) {
         setAll: (list) => {
           list.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
-          list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          list.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, authCookieOptions(remember, options)),
+          );
         },
       },
     },
