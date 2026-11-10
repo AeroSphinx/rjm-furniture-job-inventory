@@ -67,5 +67,11 @@
     "backToLogin": "Back to login",
     "demoAccountsToggle": "Demo accounts",
     "demoAccountsHint": "For grading only — not real accounts."
+  },
+  "NoAccess": {
+    "eyebrow": "ACCESS",
+    "title": "No Access",
+    "purpose": "You do not have access to this page.",
+    "backToDashboard": "Back to Dashboard"
   }
 }

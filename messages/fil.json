@@ -68,5 +68,11 @@
     "backToLogin": "Bumalik sa login",
     "demoAccountsToggle": "Demo accounts",
     "demoAccountsHint": "Para sa grading lang — hindi totoong account."
+  },
+  "NoAccess": {
+    "eyebrow": "ACCESS",
+    "title": "Walang Access",
+    "purpose": "Wala kang access sa page na ito.",
+    "backToDashboard": "Bumalik sa Dashboard"
   }
 }
