@@ -41,15 +41,33 @@ type DemoAccount = {
   preferences: Record<string, unknown>;
 };
 
-// Table from design §21.2. Passwords are demo-only, fake data for an
-// unattended grading run — not secrets, and never reused anywhere real.
+// Passwords are never hardcoded here and never committed: each comes from
+// its own env var, read from `.env.local` (gitignored), so a demo-only
+// password cannot end up in git by way of this file. Fill
+// SEED_OWNER_PASSWORD / SEED_ADMIN_PASSWORD / SEED_WORKER_PASSWORD in
+// `.env.local` before running `npm run seed` — the README documents the
+// three variable names (not their values).
+function requirePassword(envVar: string, role: string): string {
+  const value = process.env[envVar];
+  if (!value || value.length < 8) {
+    console.error(
+      `${envVar} is empty or too short. Set it in .env.local to a password of your choosing ` +
+        `for the demo "${role}" account before running \`npm run seed\`.`,
+    );
+    process.exit(1);
+  }
+  return value;
+}
+
+// Table from design §21.2 (usernames, roles and display names — not
+// secrets). The password for each comes from its own env var above.
 const ACCOUNTS: DemoAccount[] = [
   {
     role: "owner",
     username: "owner",
     fullName: "Mang Roger Mendoza",
     email: "owner@rjm.local",
-    password: "RjmOwner#2026",
+    password: requirePassword("SEED_OWNER_PASSWORD", "owner"),
     preferences: { simple_mode: false, visible_focus: true, show_labels: true },
   },
   {
@@ -57,7 +75,7 @@ const ACCOUNTS: DemoAccount[] = [
     username: "admin",
     fullName: "Aileen Cruz",
     email: "admin@rjm.local",
-    password: "RjmAdmin#2026",
+    password: requirePassword("SEED_ADMIN_PASSWORD", "admin"),
     preferences: { simple_mode: false, visible_focus: true, show_labels: true },
   },
   {
@@ -65,7 +83,7 @@ const ACCOUNTS: DemoAccount[] = [
     username: "worker",
     fullName: "Dario Ramos",
     email: "worker@rjm.local",
-    password: "RjmWorker#2026",
+    password: requirePassword("SEED_WORKER_PASSWORD", "worker"),
     // Simple mode starts ON for the worker demo account (settled decision D2).
     preferences: { simple_mode: true, visible_focus: true, show_labels: true },
   },
