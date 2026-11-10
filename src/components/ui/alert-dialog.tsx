@@ -112,8 +112,12 @@ function AlertDialogCancel({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+  // Deliberate: inside an already focus-trapped modal, autoFocus here is
+  // what keeps the destructive action from ever being the default-focused
+  // control (Requirement 20.12) — the standard WAI-ARIA dialog pattern.
   return (
     <AlertDialogPrimitive.Cancel
+      // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}

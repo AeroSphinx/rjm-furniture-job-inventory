@@ -25,9 +25,12 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+// Content comes from the spread `children` in `props`; the static check
+// cannot see through the spread on this generic primitive wrapper.
 /** Heading level is passed in by the caller (via `SectionCard`), never hardcoded. */
 function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
   return (
+    // eslint-disable-next-line jsx-a11y/heading-has-content
     <h3 data-slot="card-title" className={cn("text-lg font-semibold leading-none", className)} {...props} />
   );
 }
