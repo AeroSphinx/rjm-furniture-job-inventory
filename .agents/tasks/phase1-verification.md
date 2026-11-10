@@ -129,6 +129,97 @@ uncommitted; working tree otherwise clean.
   evaluation-traceability.md` (new), `.kiro/specs/rjm-furniture-system/
   tasks.md` (checkboxes 1.1–1.12).
 
+## Round 2 — review findings fixed
+
+`.agents/tasks/phase1-verdict.json` (`CHANGES_REQUESTED`) and
+`.agents/tasks/phase1-review.md` reported five findings against the
+tasks 1.9–1.12 diff above. All five were fixed; none required a product
+decision or a user-visible behavior change beyond what design.md already
+specified, so no `send_message` warning was needed.
+
+1. **Password toggle below the 44×44 px floor** — `LoginForm.tsx`'s
+   show/hide button was `size-9` (36×36 px). Changed to `size-11`
+   (44×44 px), matching the `Dialog` close button and `Button` icon size
+   already used elsewhere.
+2. **Username lookup used `ILIKE` instead of an exact match** —
+   `resolveUsernameToEmail` in `src/actions/auth.ts` called
+   `.ilike("username", username)`; a username containing `_` (a SQL
+   single-character wildcard, valid per design §14.4's character class)
+   could match the wrong row. Changed to
+   `.eq("username", username.toLowerCase())`, matching design §14.2's
+   `lower(username) = lower($1)`.
+3. **`rjm_remember` cookie truncated from 400 days to 30** —
+   `authCookieOptions(true, { maxAge: 60 * 60 * 24 * 400 })`'s 400-day
+   value was discarded by the helper's own hardcoded 30-day `maxAge` in
+   its `remember=true` branch. The preference cookie is now written with
+   its own explicit `{ path: "/", sameSite: "lax", maxAge: 60*60*24*400 }`
+   directly, bypassing `authCookieOptions` (which still governs only the
+   real auth-session cookies, unchanged).
+4. **`src/lib/supabase/server.ts` not wired through `authCookieOptions`**
+   — only `src/proxy.ts` mapped its cookie `setAll` through the helper.
+   `server.ts` now reads `REMEMBER_COOKIE` the same way the proxy does and
+   maps every `setAll` cookie through `authCookieOptions(remember,
+   options)`, per design §14.2.
+5. **`reason=deactivated` had no reader** — `requireUser()` already
+   redirected deactivated accounts to `/login?reason=deactivated`, but
+   the login page never read it, so design §14.3's "slight emphasis" on
+   the "Need help? Contact the system administrator." helper text never
+   rendered. `src/app/(public)/login/page.tsx` now awaits `searchParams`
+   and passes `deactivated={reason === "deactivated"}` to `LoginForm`,
+   which swaps the helper text's class to bold/foreground instead of
+   muted — same copy, same generic-error principle, no account-state
+   disclosure beyond what design.md already specified.
+
+### Re-verification after the fixes
+
+```
+npx tsc --noEmit        → clean, 0 errors
+npm run build            → succeeded, zero TypeScript errors
+                            Route (app): /, /_not-found, /login, /no-access
+```
+
+`npm run dev` was started detached a second time (`cmd.exe /c npm run
+dev`, output redirected to `.agents/tasks/dev-out.log`/`dev-err.log`),
+confirmed `✓ Ready in 1607ms` in the log, then every `node.exe` process
+was stopped (`Stop-Process -Force`); `Get-Process node` afterward returned
+nothing. Both log files were deleted and are not present in the repo.
+
+Secret-key grep repeated: `grep_search` for `sb_secret_` across the
+workspace returns only the pattern name itself inside `design.md` and
+`design-review.md` (documenting the `check-secrets.ts` convention), never
+a live key. `.env.local`'s `SUPABASE_SECRET_KEY=` line is still blank.
+
+`git log --oneline -6` after the fixes:
+
+```
+247b0e1 fix: render the admin-contact helper text with emphasis on a deactivated-account redirect (review finding)
+c836336 fix: stop truncating the rjm_remember 400-day cookie and wire server client cookies through authCookieOptions (review findings)
+0ab22f0 fix: resolve username lookup with an exact match instead of ILIKE (review finding)
+66bd085 fix: enlarge password toggle to the 44x44 px touch-target floor (review finding)
+0f9c188 docs: append Phase 1 design-rationale/evaluation-traceability entries, check off tasks 1.1-1.12 (task 1.12)
+9cfd2c9 feat: fail-closed requireUser/requireRole and the no-access screen (task 1.11)
+```
+
+`git status` after the fourth fix commit: working tree clean except the
+untracked `.agents/tasks/phase1-review.md` and
+`.agents/tasks/phase1-verdict.json` (the review artifacts themselves,
+left as found, not committed).
+
+### Files touched, grouped by finding
+
+- **Finding 1** — `src/components/features/auth/LoginForm.tsx` (toggle
+  size only).
+- **Finding 2** — `src/actions/auth.ts` (`resolveUsernameToEmail`).
+- **Findings 3 & 4** — `src/actions/auth.ts` (remember-cookie write) and
+  `src/lib/supabase/server.ts` (`setAll` now routed through
+  `authCookieOptions`).
+- **Finding 5** — `src/app/(public)/login/page.tsx` (reads
+  `searchParams`) and `src/components/features/auth/LoginForm.tsx`
+  (`deactivated` prop and emphasized helper text).
+
+No Phase 2 work was started. No Supabase migration or seed command was
+run.
+
 ## Guardrails confirmed
 
 - No Supabase migration or seed command was run.
