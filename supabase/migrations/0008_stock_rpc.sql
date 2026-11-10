@@ -61,10 +61,13 @@ begin
     raise exception 'INVALID_DIRECTION' using errcode = 'P0001';
   end if;
 
-  -- 5. lock the material row
-  select id, name, unit, current_stock into v_material
-  from public.materials
-  where id = p_material_id and deleted_at is null
+  -- 5. lock the material row. Columns are qualified with the table alias
+  -- because the function's own OUT parameter list (RETURNS TABLE) declares
+  -- a column named `unit` too, and an unqualified `unit` here would be
+  -- ambiguous between that OUT variable and materials.unit.
+  select m.id, m.name, m.unit, m.current_stock into v_material
+  from public.materials m
+  where m.id = p_material_id and m.deleted_at is null
   for update;
   if v_material.id is null then
     raise exception 'MATERIAL_NOT_FOUND' using errcode = 'P0001';
