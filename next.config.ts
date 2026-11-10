@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
-
-import createNextIntlPlugin from "next-intl/plugin";
-
-const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+import path from "node:path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Pins the workspace root explicitly: a stray package.json in a parent
+  // directory outside this git repository otherwise makes Turbopack guess.
+  turbopack: {
+    root: path.join(__dirname),
+  },
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

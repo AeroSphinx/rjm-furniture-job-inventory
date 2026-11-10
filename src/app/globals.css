@@ -1,26 +1,201 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *)); /* declared but unused: no dark mode in v0.1 */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- brand ramps — full tables in design.md §5.1 ---- */
+  --dusk-50: #f8fafd;
+  --dusk-100: #f0f3fb;
+  --dusk-200: #e0e7f6;
+  --dusk-300: #cbd6f0;
+  --dusk-400: #b4c4e9;
+  --dusk-500: #9fb4e3;
+  --dusk-600: #8295c0;
+  --dusk-700: #65769d;
+  --dusk-800: #445576;
+  --dusk-900: #2a3956;
+
+  --navy-50: #96abd8;
+  --navy-100: #8da2ce;
+  --navy-200: #7c8fb9;
+  --navy-300: #65769d;
+  --navy-400: #4d5e80;
+  --navy-500: #394868;
+  --navy-600: #2a3956;
+  --navy-700: #1f2c48;
+  --navy-800: #16233e;
+  --navy-900: #0d1a33;
+
+  --orange-50: #fff3ee;
+  --orange-100: #ffe4d9;
+  --orange-200: #ffc9b3;
+  --orange-300: #ffa984;
+  --orange-400: #ff8855;
+  --orange-500: #ff6a2b;
+  --orange-600: #de5b23;
+  --orange-700: #c14d1c;
+  --orange-800: #a13e15;
+  --orange-900: #84300e;
+
+  /* ---- status colour pairs (design §5.1) ---- */
+  --success-surface: #e6f4ec;
+  --success-text: #0b5c38;
+  --success-accent: #0f7a4a;
+  --warning-surface: #fff4e0;
+  --warning-text: #7a4a00;
+  --warning-accent: #b26b00;
+  --danger-surface: #fdecea;
+  --danger-text: #a1180f;
+  --danger-accent: #c62828;
+  --info-surface: #e8eefb;
+  --info-text: #1f2c48;
+  --info-accent: #65769d;
+  --neutral-surface: var(--dusk-200);
+  --neutral-text: var(--navy-900);
+  --neutral-accent: var(--dusk-700);
+
+  /* the two colours high-contrast mode needs that no ramp provides (design §15.2).
+     Declared here so they are part of the one token set and the contrast
+     script owns them like any other hex (design §5.4 rows 44 and 46). */
+  --hc-text: #0a0a0a;
+  --hc-sidebar: #000000;
+
+  /* ---- semantic (shadcn) tokens — design §5.2 ---- */
+  --background: var(--dusk-50);
+  --foreground: var(--navy-900);
+  --card: #ffffff;
+  --card-foreground: var(--navy-900);
+  --primary: var(--orange-500);
+  --primary-foreground: var(--navy-900);
+  --primary-border: var(--orange-700);
+  --secondary: var(--dusk-200);
+  --secondary-foreground: var(--navy-900);
+  --muted: var(--dusk-100);
+  --muted-foreground: var(--navy-400);
+  --accent: var(--dusk-300);
+  --accent-foreground: var(--navy-900);
+  --destructive: var(--danger-accent);
+  --destructive-foreground: #ffffff;
+  --border: var(--dusk-200);
+  --input: var(--dusk-700);
+  --ring: var(--orange-700);
+  --sidebar: var(--navy-900);
+  --sidebar-foreground: #ffffff;
+  --sidebar-accent: var(--navy-700);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-ring: var(--orange-400);
+  --radius: 0.625rem;
+
+  /* runtime-switchable type scale (preference: text size, wired in Phase 2) */
+  --app-text-base: 1rem; /* 16px minimum body text — Requirement 17.1 */
+  --app-scale: 1;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-border: var(--primary-border);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* one entry per ramp step, all three ramps */
+  --color-dusk-50: var(--dusk-50);
+  --color-dusk-100: var(--dusk-100);
+  --color-dusk-200: var(--dusk-200);
+  --color-dusk-300: var(--dusk-300);
+  --color-dusk-400: var(--dusk-400);
+  --color-dusk-500: var(--dusk-500);
+  --color-dusk-600: var(--dusk-600);
+  --color-dusk-700: var(--dusk-700);
+  --color-dusk-800: var(--dusk-800);
+  --color-dusk-900: var(--dusk-900);
+
+  --color-navy-50: var(--navy-50);
+  --color-navy-100: var(--navy-100);
+  --color-navy-200: var(--navy-200);
+  --color-navy-300: var(--navy-300);
+  --color-navy-400: var(--navy-400);
+  --color-navy-500: var(--navy-500);
+  --color-navy-600: var(--navy-600);
+  --color-navy-700: var(--navy-700);
+  --color-navy-800: var(--navy-800);
+  --color-navy-900: var(--navy-900);
+
+  --color-orange-50: var(--orange-50);
+  --color-orange-100: var(--orange-100);
+  --color-orange-200: var(--orange-200);
+  --color-orange-300: var(--orange-300);
+  --color-orange-400: var(--orange-400);
+  --color-orange-500: var(--orange-500);
+  --color-orange-600: var(--orange-600);
+  --color-orange-700: var(--orange-700);
+  --color-orange-800: var(--orange-800);
+  --color-orange-900: var(--orange-900);
+
+  --color-success: var(--success-accent);
+  --color-success-surface: var(--success-surface);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning-accent);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger-accent);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-text: var(--danger-text);
+  --color-info: var(--info-accent);
+  --color-info-surface: var(--info-surface);
+  --color-info-text: var(--info-text);
+  --color-neutral-surface: var(--neutral-surface);
+  --color-neutral-text: var(--neutral-text);
+  --color-neutral-accent: var(--neutral-accent);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* one type scale — xs 12 · sm 14 · base 16 · lg 18 · xl 22 · 2xl 28 · 3xl 36,
+     all multiplied by --app-scale so the text-size preference re-scales
+     everything at once (design §5.3, §15.2) */
+  --text-xs: calc(0.75rem * var(--app-scale));
+  --text-sm: calc(0.875rem * var(--app-scale));
+  --text-base: calc(var(--app-text-base) * var(--app-scale));
+  --text-lg: calc(1.125rem * var(--app-scale));
+  --text-xl: calc(1.375rem * var(--app-scale));
+  --text-2xl: calc(1.75rem * var(--app-scale));
+  --text-3xl: calc(2.25rem * var(--app-scale));
+
+  /* one spacing scale — Tailwind's default 4px rhythm, used only at
+     1 2 3 4 6 8 12 16 by convention across the app */
+
+  /* one radius scale */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: var(--radius);
+  --radius-xl: 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground text-base;
+  }
 }
