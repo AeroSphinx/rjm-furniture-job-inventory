@@ -5,17 +5,22 @@ import { isSignedIn } from "@/lib/auth";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { LoginForm } from "@/components/features/auth/LoginForm";
 
+type LoginPageProps = {
+  searchParams: Promise<{ reason?: string }>;
+};
+
 /**
  * The split login layout (Requirement 1.2). A signed-in visitor who
  * reopens `/login` is sent straight to the Dashboard — the mirror of the
  * proxy's own redirect (design §3.1) — rather than shown a sign-in form
  * for a session they already have.
  */
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   if (await isSignedIn()) {
     redirect("/dashboard");
   }
 
+  const { reason } = await searchParams;
   const t = await getTranslations("Auth");
 
   return (
@@ -62,7 +67,7 @@ export default async function LoginPage() {
             <span className="h-px flex-1 bg-border" aria-hidden />
           </div>
 
-          <LoginForm />
+          <LoginForm deactivated={reason === "deactivated"} />
 
           <p className="mt-6 text-center text-xs text-muted-foreground">{t("footer")}</p>
         </div>

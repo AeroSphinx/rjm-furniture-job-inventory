@@ -23,7 +23,19 @@ import { ForgotPasswordDialog } from "@/components/features/auth/ForgotPasswordD
  * pending state and the one generic error message are easy to show
  * without a page navigation.
  */
-function LoginForm() {
+type LoginFormProps = {
+  /**
+   * Set when `requireUser()` redirected here with `?reason=deactivated`
+   * (design §14.3). The copy stays the same generic helper text either
+   * way — nothing about the account's state is disclosed — only its
+   * emphasis changes, so a visitor who was just signed out for that
+   * reason notices the "contact the administrator" line without the page
+   * saying why.
+   */
+  deactivated?: boolean;
+};
+
+function LoginForm({ deactivated = false }: LoginFormProps) {
   const t = useTranslations("Auth");
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -154,7 +166,15 @@ function LoginForm() {
           {isPending ? t("loggingIn") : t("loginButton")}
         </Button>
 
-        <p className="text-center text-xs text-muted-foreground">{t("helperText")}</p>
+        <p
+          className={
+            deactivated
+              ? "text-center text-xs font-semibold text-foreground"
+              : "text-center text-xs text-muted-foreground"
+          }
+        >
+          {t("helperText")}
+        </p>
       </form>
 
       <ForgotPasswordDialog
