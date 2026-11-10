@@ -45,7 +45,7 @@ async function resolveUsernameToEmail(username: string): Promise<string | null> 
   const { data, error } = await admin
     .from("profiles")
     .select("email")
-    .ilike("username", username)
+    .eq("username", username.toLowerCase())
     .is("deactivated_at", null)
     .maybeSingle();
 
