@@ -1,0 +1,63 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "MEDIUM",
+      "title": "The only writer of job_status_history has no stated security context, and on the direct-update path it has no privilege to write",
+      "location": "design.md §13.4 (jobs_log_status_change), §10 (job_status_history row + grants matrix), §13.2 (\"two doors into the same room\")",
+      "problem": "job_status_history has RLS enabled, a select policy only, and no insert grant or insert policy for `authenticated`. jobs_log_status_change is never marked SECURITY DEFINER, and §7.2's own convention implies an unmarked function is invoker-rights (touch_updated_at, the one trigger body shown, is plain plpgsql). Meanwhile §10 keeps a live client write path to jobs.status: grant update (status, deleted_at, updated_at) plus jobs_update_staff and jobs_update_assigned_worker, which §13.2 explicitly calls the second of two doors. A non-definer trigger function runs with the invoking user's privileges and RLS, so a direct PATCH of jobs.status fires the trigger as `authenticated`, the history insert is refused, and the whole status update rolls back with `permission denied for table job_status_history`. The RPC paths are unaffected (both are definer), so the demo works, but §10's claim that the trigger is the table's only writer only holds if the trigger runs as the owner, which the document never says. The §9 box-7 smoke query (update jobs set status = ... as a demo user) takes the broken path.",
+      "fix": "Mark the trigger function definer and say why: `create or replace function public.log_job_status_change() returns trigger language plpgsql security definer set search_path = public, pg_temp as $$ begin if new.status is distinct from old.status then insert into public.job_status_history (job_id, from_status, to_status, changed_by) values (new.id, old.status, new.status, auth.uid()); end if; return null; end $$;` plus one sentence in §13.4: \"jobs_log_status_change is security definer because job_status_history has no client insert grant; running as the table owner is what makes the trigger its only possible writer on every path, including a direct PATCH of jobs.status.\" State in the same place that the other three triggers are invoker-rights because they only inspect or modify NEW. Alternative (larger edit): drop `status` from the authenticated update grant on jobs and route every status change through the two RPCs, updating §10, §13.2 and §18.5 accordingly."
+    },
+    {
+      "id": 2,
+      "severity": "NIT",
+      "title": "§9's migration list says \"both job triggers\" while §13.4 defines four triggers on jobs",
+      "location": "design.md §9, canonical filename list, 0004_jobs_pricing_history.sql",
+      "problem": "The third revision added jobs_set_status_changed_at, so jobs now carries jobs_guard_worker_update, jobs_set_status_changed_at, jobs_log_status_change and touch_updated_at. \"Both\" is stale, and the list is what an implementer works from.",
+      "fix": "0004_jobs_pricing_history.sql   jobs + job_pricing + job_status_history + all four job triggers (guard -> set_status_changed_at -> touch_updated_at -> log_status_change)"
+    },
+    {
+      "id": 3,
+      "severity": "NIT",
+      "title": "§5.6's list of deliberately shared hexes misses #2A3956, so check:contrast fails on its first run",
+      "location": "design.md §5.6 step 2 versus §5.1 (\"--dusk-900 and --navy-600 are the same hex by construction\")",
+      "problem": "§5.6 names three shared hexes (#65769D, #4D5E80, #0D1A33) and makes \"a hex found under a different primary name\" a drift error. #2A3956 is declared twice in globals.css as --dusk-900 and --navy-600, so a checker written to §5.6 reports drift and exits 1 against the stylesheet §5.3 prescribes.",
+      "fix": "In §5.6 step 2 change \"three hexes\" to \"four hexes\" and add \"#2A3956 is --dusk-900 (primary) and --navy-600\"; or restate the rule as \"each TOKENS entry lists its primary name plus every alias, and a hex found under a name in neither list is drift\", so the prose carries no count."
+    },
+    {
+      "id": 4,
+      "severity": "NIT",
+      "title": "Month and week boundaries use current_date (UTC) while job codes and all display are pinned to Asia/Manila",
+      "location": "design.md §13.6 (dashboard payload comments), §21.3 (seed rules and both assertions), §20 (Reports presets) versus §11.3 and §16.1",
+      "problem": "For about eight hours either side of a month boundary, \"+N this month\", the Reports \"This month\" preset and the displayed dates can disagree about the month. Harmless on the grading date; confusing if the demo is re-seeded on the 1st.",
+      "fix": "Use one expression everywhere: `(now() at time zone 'Asia/Manila')::date` in dashboard_summary(), report_summary() and the two seed assertions. Or add one sentence to §13.6 accepting UTC boundaries for this prototype. Either is fine; silence is not."
+    },
+    {
+      "id": 5,
+      "severity": "NIT",
+      "title": "esc() does not strip `_`, although its comment claims to cover \"the two wildcards\"",
+      "location": "design.md §3.2, src/lib/queries/_filter.ts",
+      "problem": "PostgREST's ilike becomes SQL ILIKE, where `_` matches any single character, so `MAT_001` matches `MAT-001` and `2_` matches `2\"`. Nothing leaks and the filter shape stays safe, but the comment overstates the regex and the §22 unit test would not catch it.",
+      "fix": "const FORBIDDEN = /[\"\\\\,().:*%_]/g;   // PostgREST filter metacharacters + the three ILIKE wildcards (* % _)  — and extend the pinned test: esc('MAT_001, 3/4\"') === 'MAT 001 3/4'."
+    },
+    {
+      "id": 6,
+      "severity": "NIT",
+      "title": "job_material_cost is gated at is_staff() while Requirement 14.8 reserves the figure for owner only",
+      "location": "design.md §8.4 and §13.6 versus requirements.md 14.8 [STRETCH]",
+      "problem": "Admin staff can call the function and read a figure the requirement reserves for the owner. The worker protection the brief settled is unaffected; this is the owner/admin line on a STRETCH item.",
+      "fix": "Either tighten the gate to `if public.current_app_role() <> 'owner' then raise exception 'NOT_PERMITTED' ...`, or keep is_staff() and add one sentence to §13.6 saying the function is staff-gated for the job-detail panel while the Requirement 14.8 Reports tile renders for owner only in the page component."
+    },
+    {
+      "id": 7,
+      "severity": "NIT",
+      "title": "Nothing supports open decision O7's \"(removed)\" customer marker",
+      "location": "design.md §7.3 (v_jobs_list projects customer_name only), §13.5, §20 versus requirements.md O7",
+      "problem": "A soft-deleted customer's jobs stay visible (the inner join is correct, since the row still exists), but the list and detail cannot distinguish a live customer from a removed one because no deletion flag reaches the view.",
+      "fix": "Add `(c.deleted_at is not null) as customer_removed` to v_jobs_list and render the name with a \"(removed)\" suffix when true; or state in §20 and the deviation register that O7's marker is dropped for the deadline."
+    }
+  ],
+  "counts": { "HIGH": 0, "MEDIUM": 1, "NIT": 6 },
+  "reviewDoc": "c:\\Users\\lyn\\Documents\\Kiro Projects\\RJM-furniture-system\\.agents\\tasks\\design-review.md"
+}
