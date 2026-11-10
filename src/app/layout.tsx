@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { loadPreferences } from "@/lib/prefs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,18 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const prefs = await loadPreferences();
 
   return (
     <html
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-text-size={prefs.text_size}
+      data-high-contrast={prefs.high_contrast ? "on" : "off"}
+      data-reduce-motion={prefs.reduce_motion ? "on" : "off"}
+      data-visible-focus={prefs.visible_focus ? "on" : "off"}
+      data-show-labels={prefs.show_labels ? "on" : "off"}
+      data-simple-mode={prefs.simple_mode ? "on" : "off"}
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
