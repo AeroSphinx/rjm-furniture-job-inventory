@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authCookieOptions, REMEMBER_COOKIE } from "@/lib/supabase/cookie-options";
+import { REMEMBER_COOKIE } from "@/lib/supabase/cookie-options";
 import { LoginSchema, type LoginFormValues } from "@/schemas/auth";
 
 export type SignInResult =
@@ -146,9 +146,17 @@ export async function signIn(values: LoginFormValues): Promise<SignInResult> {
 
   // Success: clear the throttle, persist the "remember me" choice, and let
   // the proxy's and this request's cookie writers agree on cookie lifetime
-  // through `authCookieOptions` from here on.
+  // through `authCookieOptions` from here on. The preference cookie itself
+  // is written with its own 400-day `maxAge` directly — `authCookieOptions`
+  // governs the *auth session* cookies' lifetime, not this one, and its
+  // `remember=true` branch hardcodes a 30-day `maxAge` that would otherwise
+  // silently clobber the 400-day value passed in here.
   store.delete(THROTTLE_COOKIE);
-  store.set(REMEMBER_COOKIE, remember ? "1" : "0", authCookieOptions(true, { maxAge: 60 * 60 * 24 * 400 }));
+  store.set(REMEMBER_COOKIE, remember ? "1" : "0", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 400,
+  });
 
   redirect("/dashboard");
 }
