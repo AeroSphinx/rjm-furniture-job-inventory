@@ -112,8 +112,13 @@ begin
     raise exception 'NOT_PERMITTED' using errcode = 'P0001';
   end if;
 
-  select job_code, status into v_old from public.jobs
-  where id = p_job_id and deleted_at is null;
+  -- Columns are qualified with the table alias because this function's own
+  -- `returns table (job_id, job_code, old_status, new_status)` declares
+  -- output variables of those same names, and an unqualified reference is
+  -- ambiguous between the two (the same bug class §13.4's design-rationale
+  -- entry already names for `record_stock_movement()`'s `unit` column).
+  select j.job_code, j.status into v_old from public.jobs j
+  where j.id = p_job_id and j.deleted_at is null;
   if v_old.job_code is null then
     raise exception 'JOB_NOT_FOUND' using errcode = 'P0001';
   end if;
@@ -154,7 +159,10 @@ begin
   where id = p_job_id;
 
   if p_clear_price then
-    delete from public.job_pricing where job_id = p_job_id;
+    -- Qualified for the same reason as the `select` above: `job_id` is
+    -- both a column on `job_pricing` and this function's own output
+    -- parameter name.
+    delete from public.job_pricing jp where jp.job_id = p_job_id;
   elsif p_quoted_price is not null then
     insert into public.job_pricing (job_id, quoted_price, updated_by)
     values (p_job_id, p_quoted_price, auth.uid())
