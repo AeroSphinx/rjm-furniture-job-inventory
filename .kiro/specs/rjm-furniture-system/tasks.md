@@ -244,32 +244,32 @@ Migration 0012 (2.12) is `[STRETCH]` and can be done whenever a gap opens on Day
 
 ## Phase 4 — Inventory, Inventory Transactions, stock rules
 
-- [ ] 4.1 [MUST] Build the Inventory list screen
+- [x] 4.1 [MUST] Build the Inventory list screen
   - `/inventory`: the eight fixed columns (no cost column for any role); the computed "Stock attention needed — N materials…" banner; search + "Category: All" + "+ Add Inventory Item"; worker read-only variant with no row actions.
   - Requirements: 10.1–10.5, 10.9, 10.11
   - Indicators: 7, 9, 12, 21
 
-- [ ] 4.2 [MUST] Build the material create/edit form
+- [x] 4.2 [MUST] Build the material create/edit form
   - `MaterialForm`, `src/schemas/material.ts`, wired to `upsert_material()`; required `unit_cost` for staff; opening-stock field; helper text stating stock changes only through a recorded transaction.
   - Requirements: 10.6–10.8, 10.12, 10.13
   - Indicators: 8, 9, 16
 
-- [ ] 4.3 [MUST] Build the Inventory Transactions list screen
+- [x] 4.3 [MUST] Build the Inventory Transactions list screen
   - `/transactions`: the seven fixed columns; the "Inventory traceability…" info banner; search + "Transaction Type: All"; "+ Record Stock In" (staff) and "Record Stock Out" (all roles) buttons; no edit/delete on any row.
   - Requirements: 11.1–11.9, 11.11, 11.12
   - Indicators: 7, 9, 12, 21
 
-- [ ] 4.4 [MUST] Build the Record Stock In / Stock Out forms wired to `record_stock_movement`
+- [x] 4.4 [MUST] Build the Record Stock In / Stock Out forms wired to `record_stock_movement`
   - `StockMovementForm` (type-aware fields), `src/schemas/transaction.ts`; client-side quantity guard against available stock; the zero-stock option rendered disabled with its explanation; for a worker, the job-order picker limited to jobs assigned to them.
   - Requirements: 11.10, 12.4–12.7, 12.12, 12.13, 20.4, 20.10
   - Indicators: 8, 9, 20
 
-- [ ] 4.5 [MUST] Wire the success/error toasts and the stock-RPC error-code map
+- [x] 4.5 [MUST] Wire the success/error toasts and the stock-RPC error-code map
   - `src/lib/errors.ts`: map every code from design §12.5/§18.2 to an i18n key present in both message files; success toast naming the material, the quantity and the new stock level (Requirement 12.10).
   - Requirements: 12.10, 20.6–20.9, 20.11
   - Indicators: 8, 9, 20
 
-- [ ] 4.6 [MUST] Append the Phase 4 sections to the two running documents
+- [x] 4.6 [MUST] Append the Phase 4 sections to the two running documents
   - Add the Phase 4 entries to `docs/design-rationale.md` and `docs/evaluation-traceability.md` (evidence for indicators 7, 8, 9, 12, 16, 20, 21 advanced so far).
   - Requirements: 25.2, 25.4, 25.11
   - Indicators: 17, 19

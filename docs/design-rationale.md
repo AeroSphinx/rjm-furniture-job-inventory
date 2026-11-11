@@ -221,6 +221,104 @@ Materials issued to the job reuse `v_transactions_list` filtered to
 `type = 'stock_out'`, which already carries no cost column, so the panel
 needed no new query shape and no new leak surface to reason about.
 
-## Phase 4 onward
+## Phase 4 — Inventory, Inventory Transactions, stock rules
 
-_Appended as each later phase closes out (tasks 4.6, 5.8, 6.10, 6.17)._
+**A second occurrence of the same ambiguous-column bug class, this time
+in `upsert_material()`, found by the Phase 4 smoke test and fixed in a
+new migration rather than by editing an already-applied file.**
+`upsert_material()`'s `RETURNS TABLE` declares `material_code` and
+`current_stock` as output parameters (design §13.3), and its final
+statement read both names unqualified — `select material_code,
+current_stock into v_code, v_stock from public.materials where id =
+v_id` — which is exactly the pattern Phase 2 found once in
+`record_stock_movement()`'s `unit` column and Phase 3 found again in
+`update_job_order()`'s `job_code`/`status`. Every real call to
+`upsert_material()` failed with `column reference "material_code" is
+ambiguous`, which would have blocked both the Add Inventory Item form and
+every opening-stock figure — a complete block on Requirement 10.6/13.3,
+not a cosmetic bug. Unlike Phase 3's fix (an amendment to the
+still-malleable migration that introduced the bug), migration `0009` had
+already been applied to the live dev project by the time this phase
+started, so editing that file in place would not change what Postgres is
+actually running. The fix is instead `supabase/migrations/
+0013_fix_upsert_material_ambiguous_column.sql`: a `create or replace
+function` that reproduces `upsert_material()` exactly, with the one
+colliding statement qualified (`select m.material_code, m.current_stock
+into v_code, v_stock from public.materials m where m.id = v_id`), pushed
+with `supabase db push --remote`. The lesson recorded a third time: a
+function whose `RETURNS TABLE` names collide with a column name it reads
+needs every such reference qualified, and that is now worth a
+pre-migration-review checklist item rather than something each phase
+discovers independently.
+
+**A stale `transaction_code_seq` sequence, found live and resynced by
+SQL rather than by a code change.** `TXN-NNNN` codes come from a plain
+Postgres sequence (`transaction_code_seq`, design §11.3), not the
+heal-then-retry counter `next_job_code()` uses — sequences are assumed
+never to collide because nothing but `record_stock_movement()` writes
+`inventory_transactions`. The live dev project's ledger held 110 rows,
+one more than the 109 the seed file documents, left over from an earlier
+phase's own real RPC call against the dev project (most likely a §2.13
+grants spot-check, which calls `record_stock_movement()` for real) that
+was never followed by a re-sync of the sequence. The seed's one-time
+catch-up (`setval('transaction_code_seq', 1094)`, written at authoring
+time) did not know about that extra row, so the sequence sat one step
+behind reality and the very first live stock-in this phase attempted
+collided with the pre-existing `TXN-1095`. Fixed by resyncing the
+sequence to the table's real maximum
+(`setval('transaction_code_seq', (select max(...)), true)`) — a one-time
+operational statement against the live project, not a schema or function
+change, so no migration file carries it. Recorded here, rather than left
+silent, because the next person to run a real RPC call against this
+project should know the sequence can drift behind manual testing and
+that resyncing it is the correct response, not evidence of a logic bug
+in `record_stock_movement()` itself (which, once the drift was cleared,
+produced the exact arithmetic — 10 in, 3 out, 7 left — the smoke test
+expected).
+
+**The Stock In form folds Requirement 11.9's correction path into
+itself, instead of adding a third button.** The wireframe (screen 6) and
+Requirement 11.3 fix exactly two buttons, "+ Record Stock In" and
+"Record Stock Out" — there is no "Record Adjustment" button anywhere in
+the brief. But Requirement 11.9 still requires a correction path for a
+wrongly-recorded transaction, and `record_stock_movement()`'s `adjustment`
+type (design §12.2) is that path. Rather than inventing a third button
+the wireframe does not draw, `StockMovementForm`'s stock-in mode carries
+a small "Transaction Type" choice (Stock In / Adjustment); choosing
+Adjustment reveals a direction field (raise/lower) in place of the
+implicit "always adds" behaviour of a plain delivery. The `/transactions`
+screen's info banner gained a second line explaining this — "a
+transaction cannot be edited or deleted; record a new Adjustment from
+'+ Record Stock In' instead" — which is the "where a user would look for
+Edit" placement Requirement 11.9 asks for, since the ledger's fixed seven
+columns (Requirement 11.5) leave no Actions column for an Edit button to
+have lived in in the first place.
+
+**The stock-out job-order picker excludes completed jobs for every role,
+not only the worker the RPC itself restricts.** `record_stock_movement()`
+only refuses a completed job's `stock_out` for a `worker` caller (design
+§12.2 step 6) — staff could, by the function's own rule, record a
+stock-out against a job already marked complete. The picker in
+`queries/transactions.ts` filters out completed jobs uniformly instead,
+because issuing material to a finished job has no legitimate shop
+reason regardless of who is doing it, and a staff member should not have
+to discover that the hard way after choosing it. This is a UI-level
+narrowing of an already-permissive RPC, not a duplicate of its
+authorisation logic (Requirement 20.10's "block at the point of entry"
+read in the spirit the brief's ADDENDUM 2 asks for — basic UX, not a
+second implementation of the server's rule).
+
+**The Inventory list keeps its eighth column (Actions) for a worker,
+empty rather than removed.** Requirement 10.5 fixes eight columns "in
+order" for the table with no stated worker exception the way it carves
+one out for the Unit Cost column in Requirement 10.9. Rather than
+dropping the Actions column to seven for a worker (which would also
+shift every other screen's column count expectations out of sync with
+the requirement's literal text), `InventoryPageClient` renders the column
+header for every role and simply has no buttons to put in it for a
+worker — consistent with Requirement 10.9's "no Add, Edit or Delete"
+reading as "no actions", not "no Actions column".
+
+## Phase 5 onward
+
+_Appended as each later phase closes out (tasks 5.8, 6.10, 6.17)._
