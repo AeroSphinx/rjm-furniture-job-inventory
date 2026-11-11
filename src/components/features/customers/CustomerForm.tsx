@@ -44,7 +44,6 @@ function CustomerForm({
   const tRoot = useTranslations();
   const [pending, setPending] = useState(false);
   const [duplicate, setDuplicate] = useState<CustomerRow | null>(null);
-  const [skipDuplicateCheck, setSkipDuplicateCheck] = useState(false);
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(CustomerSchema),
@@ -53,7 +52,7 @@ function CustomerForm({
       : EMPTY_VALUES,
   });
 
-  async function onSubmit(values: CustomerFormValues) {
+  async function onSubmit(values: CustomerFormValues, skipDuplicateCheck = false) {
     setDuplicate(null);
 
     if (!customer && !skipDuplicateCheck && values.phone) {
@@ -78,7 +77,7 @@ function CustomerForm({
 
   return (
     <form
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit((values) => onSubmit(values))}
       onChange={() => onDirtyChange?.(form.formState.isDirty)}
       className="flex flex-col gap-4"
     >
@@ -128,9 +127,8 @@ function CustomerForm({
               variant="secondary"
               size="default"
               onClick={() => {
-                setSkipDuplicateCheck(true);
                 setDuplicate(null);
-                form.handleSubmit(onSubmit)();
+                form.handleSubmit((values) => onSubmit(values, true))();
               }}
             >
               {t("addAnywayButton")}

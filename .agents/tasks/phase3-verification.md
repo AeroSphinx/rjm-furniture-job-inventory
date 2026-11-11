@@ -151,3 +151,44 @@ within the brief's "do not over-engineer" steering and recorded in
 
 Dev server stopped; no process left running. All throwaway smoke-test
 scripts and logs deleted; `git status` shows no stray files.
+
+## 9. Review fix: stale-closure bug in CustomerForm's "Add Anyway" button
+
+`phase3-review.md` / `phase3-verdict.json` (verdict `CHANGES_REQUESTED`)
+flagged one finding: the duplicate-customer override button set
+`skipDuplicateCheck` state and immediately called
+`form.handleSubmit(onSubmit)()` in the same handler, but `onSubmit` was
+the closure from the current render and still read `skipDuplicateCheck
+=== false`, so the first click re-ran the duplicate check and re-showed
+the warning instead of saving; a second click (after React applied the
+pending state and produced a new closure) worked.
+
+Fix: `onSubmit` now takes `skipDuplicateCheck` as a function argument
+(default `false`) instead of reading it from component state. The
+normal form submit wires `form.handleSubmit((values) => onSubmit(values))`;
+the "Add Anyway" button wires
+`form.handleSubmit((values) => onSubmit(values, true))()`, passing the
+skip flag directly into the same call that re-validates and submits, so
+there is no dependency on a state update having committed yet. The
+`skipDuplicateCheck` state variable itself was removed since nothing
+else needed it.
+
+File touched: `src/components/features/customers/CustomerForm.tsx`.
+
+Re-verification:
+
+```
+npx tsc --noEmit   -> clean
+npm run build      -> next build --turbopack succeeded, same 8 routes as before
+```
+
+No live UI re-run this iteration (no browser-automation tool available
+to this fix pass); the fix was traced the same way the finding itself
+was confirmed — by reading the corrected closure — plus the type
+checker and build, which would fail on it not type-checking a
+`BaseSyntheticEvent` into a `boolean` parameter position (that error was
+in fact hit and fixed while wiring the plain submit path's
+`form.handleSubmit` call). No other file in this phase was touched.
+
+Git: `fix(customers): pass skip-duplicate flag into onSubmit as an
+argument instead of stale closure state` — see `git log` for the hash.
