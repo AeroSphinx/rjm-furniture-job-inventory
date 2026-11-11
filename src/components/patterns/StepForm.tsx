@@ -16,17 +16,33 @@ export type FormStep = {
  * (Requirement 9.7, 20.13's sibling rule in design §6.2). A visible step
  * indicator plus Back/Next controls; the caller's `onSubmit` only fires
  * from the last step.
+ *
+ * `step`/`onStepChange` are an optional controlled pair, defaulting to
+ * the component's own internal state when omitted. A caller needs this
+ * to jump to the step holding the first invalid field after a failed
+ * submit (Requirement 9.5's "move focus to the first field in error" —
+ * focus cannot land on a field whose step is not the one showing).
  */
 function StepForm({
   steps,
   onSubmit,
   submitLabel = "Save",
+  step: controlledStep,
+  onStepChange,
 }: {
   steps: FormStep[];
   onSubmit: () => void;
   submitLabel?: string;
+  step?: number;
+  onStepChange?: (step: number) => void;
 }) {
-  const [index, setIndex] = useState(0);
+  const [internalIndex, setInternalIndex] = useState(0);
+  const index = controlledStep ?? internalIndex;
+  const setIndex = (updater: number | ((current: number) => number)) => {
+    const next = typeof updater === "function" ? (updater as (current: number) => number)(index) : updater;
+    setInternalIndex(next);
+    onStepChange?.(next);
+  };
   const isLast = index === steps.length - 1;
   const current = steps[index];
 
