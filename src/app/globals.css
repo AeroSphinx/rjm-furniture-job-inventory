@@ -270,3 +270,41 @@ html[data-simple-mode="on"] .btn-primary {
   min-height: 3rem;
   font-size: var(--text-lg);
 }
+
+/* ---- print stylesheet (Requirement 14.11, design §17) — Reports is the
+   one screen with a "Print Report" button, but the rule lives here,
+   globally, rather than scoped per-component, so any route printed gets
+   the same clean result. Sidebar, top bar and every button (every
+   interactive control on this app is a `<button>`, including Radix's
+   `Select` trigger) disappear; the page title and each card's own
+   content — including the print-only brand line Reports renders in
+   place of the hidden top bar — stay. ---- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  aside,
+  header,
+  button {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  [data-slot="card"] {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  [data-slot="table-header"] {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+}

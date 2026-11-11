@@ -102,6 +102,40 @@ export async function listMaterialCosts(
   return map;
 }
 
+export type LowStockAlertRow = {
+  id: string;
+  material_code: string;
+  name: string;
+  category: string;
+  unit: string;
+  current_stock: number;
+  minimum_level: number;
+  stock_status: StockStatus;
+  updated_at: string;
+};
+
+/**
+ * `/alerts`'s one query (Requirement 13.1-13.9, design §20): reads
+ * `v_material_status`, the same view the sidebar badge and the Inventory
+ * banner already read, filtered and sorted exactly per design §20's
+ * fixed SQL — `order by (current_stock = 0) desc, shortfall desc, name
+ * asc`. `stock_status` is text with exactly two values once the
+ * `in_stock` rows are filtered out, and "out_of_stock" sorts after
+ * "low_stock" alphabetically, so ordering by it descending reproduces
+ * the same out-of-stock-first order without a second boolean column.
+ */
+export async function listLowStockAlerts(supabase: SupabaseClient): Promise<LowStockAlertRow[]> {
+  const { data, error } = await supabase
+    .from("v_material_status")
+    .select("id, material_code, name, category, unit, current_stock, minimum_level, stock_status, updated_at")
+    .in("stock_status", ["out_of_stock", "low_stock"])
+    .order("stock_status", { ascending: false })
+    .order("shortfall", { ascending: false })
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as LowStockAlertRow[];
+}
+
 export type MaterialOption = {
   id: string;
   material_code: string;

@@ -319,6 +319,94 @@ header for every role and simply has no buttons to put in it for a
 worker — consistent with Requirement 10.9's "no Add, Edit or Delete"
 reading as "no actions", not "no Actions column".
 
-## Phase 5 onward
+## Phase 5 — Dashboard, Low-Stock Alerts, Reports, CSV and print
 
-_Appended as each later phase closes out (tasks 5.8, 6.10, 6.17)._
+**A Server Component cannot hand `DataTable` a function, and two new
+screens tried to anyway.** `DataTable` (design §6.2) is `"use client"`
+because its pagination reads `useSearchParams()`; its `columns` prop
+carries a `cell` render function per column. React's rule is that a
+Server Component may render a Client Component, but every prop crossing
+that boundary has to be serialisable — a function is not, so passing a
+`columns` array built inside a Server Component straight into
+`<DataTable>` fails at request time with "Functions cannot be passed
+directly to Client Components," not at build time (`npm run build` and
+`npx tsc --noEmit` both stay clean; the error only shows up rendering the
+page, which is what caught it here). Every existing list screen
+(`JobsPageClient`, `InventoryPageClient`, `TransactionsPageClient`,
+`CustomersPageClient`) avoids this because the component building
+`columns` is itself `"use client"` — the whole file sits on the client
+side of the boundary, so no function ever crosses it. The Dashboard's
+Recent Job Orders table and the new Alerts screen's table are the first
+two places in the app where a Server Component (kept server-side on
+purpose, so the Dashboard's three sections can share one
+`dashboard_summary()` call, and so Alerts needs no client state at all)
+wanted to use `DataTable`. The fix is one small client component per
+table — `RecentJobsTable` and `AlertsTable` — that receives plain row
+data as props and builds `columns` internally with `useTranslations`,
+exactly the shape every other `DataTable` caller already uses. Recorded
+here because the failure mode is silent until the page is actually
+requested — a type-checker and a production build both say nothing is
+wrong — and a third screen built the same way would hit it again.
+
+**The Dashboard's third `<Suspense>` section makes a second query,
+departing from "one round trip."** Design §13.6 states
+`dashboard_summary()`'s payload once and for all — six KPI figures, five
+recent jobs, five recent transactions — and that payload has no
+per-material rows for Requirement 7.9's "a row per affected material"
+Low-Stock Alerts preview. The function only returns
+`low_stock_count`/`out_of_stock_count`, which is enough for the KPI card
+but not for the three-row preview list the wireframe draws. Extending
+the already-live `dashboard_summary()` for a three-row dashboard preview
+would mean a fourteenth migration touching an already-applied function;
+`InventoryActivitySection` instead calls the already-built, already
+staff-and-worker-safe `listLowStockAlerts()` (the same query `/alerts`
+uses) alongside `getDashboardSummary()`, so this one section costs two
+queries instead of one. The other two sections still cost the one
+`dashboard_summary()` call each (deduplicated by `cache()` to a single
+round trip across all three). This is the one place this phase's
+Dashboard departs from "every figure in one round trip" (design §3.1);
+the alternative (a fourteenth migration for three rows) was judged not
+worth it on a four-day clock (brief ADDENDUM 2).
+
+**The "Record stock in" link reopens an existing dialog with the
+material pre-selected, rather than building a second form.**
+Requirement 13.8 asks for exactly that behaviour. `StockMovementForm`'s
+stock-in mode gained one optional `defaultMaterialId` prop (additive, so
+every existing caller is unaffected), and `TransactionsPageClient`
+gained one optional `preselectMaterialId` prop that opens the dialog on
+mount when present and then clears the `?stockIn=` query parameter so a
+later manual "+ Record Stock In" click does not reopen it pre-filled.
+`/alerts`'s link is a plain `<a href="/transactions?stockIn=<id>">` —
+ordinary navigation, no client state needed on the Alerts side at all.
+
+**The print stylesheet hides every `<button>`, not a hand-picked list of
+controls.** Requirement 14.11 asks for the sidebar, top bar and
+interactive controls to disappear when printed. Rather than tagging each
+toolbar and button with its own `print:hidden` class across several
+files, `globals.css`'s `@media print` block hides `aside` (the one
+sidebar), `header` (the one top bar) and every `button` element —
+Radix's `Select` trigger renders as a `<button>`, so the Reports range
+selector disappears along with the Export/Print buttons through the same
+one rule. The Job Order Summary card's subtitle already prints the
+selected range as plain text, so hiding the range selector loses no
+information on the printed page. Because the top bar (which carries the
+"RJM FURNITURE" wordmark) is hidden, Reports renders its own small
+print-only brand line (`hidden print:flex`) so the printed page still
+names the business — this is the "brand header... kept" design §17
+describes, and it lives inside `ReportsPageClient`, not in `globals.css`,
+because only Reports needs it.
+
+**No count on either new screen is hardcoded, including the one that
+required a second look.** The Dashboard's Low-Stock Materials count, the
+Alerts banner's total and breakdown, and the sidebar badge all trace
+back to one source — `v_material_status`, filtered to
+`out_of_stock`/`low_stock` — read through `listLowStockAlerts()` (Alerts,
+Dashboard) or the inline count query already in `(app)/layout.tsx`
+(sidebar badge, built in Phase 1 ahead of this phase's own task 5.7,
+confirmed unchanged and still correct here). A live check against the
+dev project during this phase's smoke test showed all three agreeing at
+four materials (one out of stock, three low stock) on the same request.
+
+## Phase 6 onward
+
+_Appended as each later phase closes out (tasks 6.10, 6.17)._

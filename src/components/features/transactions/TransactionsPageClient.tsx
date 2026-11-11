@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -33,6 +33,7 @@ function TransactionsPageClient({
   role,
   materials,
   jobs,
+  preselectMaterialId,
 }: {
   rows: TransactionListRow[];
   page: number;
@@ -42,6 +43,8 @@ function TransactionsPageClient({
   role: Role;
   materials: MaterialOption[];
   jobs: JobOption[];
+  /** `/alerts`'s "Record stock in" link arrives as `?stockIn=<material id>` (Requirement 13.8). */
+  preselectMaterialId?: string;
 }) {
   const t = useTranslations("Transactions");
   const tCommon = useTranslations("Common");
@@ -49,11 +52,22 @@ function TransactionsPageClient({
   const tErrors = useTranslations("Errors");
   const router = useRouter();
 
-  const [formMode, setFormMode] = useState<"stock_in" | "stock_out" | null>(null);
-  const [dirty, setDirty] = useState(false);
-
   const canStockIn = role !== "worker";
   const jobRequired = role === "worker";
+
+  const [formMode, setFormMode] = useState<"stock_in" | "stock_out" | null>(
+    preselectMaterialId && canStockIn ? "stock_in" : null,
+  );
+  const [dirty, setDirty] = useState(false);
+
+  // Clear the query param once the dialog has opened from it, so a later
+  // manual "+ Record Stock In" click does not reopen it pre-filled.
+  useEffect(() => {
+    if (preselectMaterialId && canStockIn) {
+      router.replace("/transactions");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function showError(code: ErrorCode, detail?: Record<string, string | number>) {
     if (code === "INSUFFICIENT_STOCK" && detail) {
@@ -186,6 +200,7 @@ function TransactionsPageClient({
               materials={materials}
               jobs={jobs}
               jobRequired={jobRequired}
+              defaultMaterialId={formMode === "stock_in" ? preselectMaterialId : undefined}
               onSaved={(_result, toastMessage) => handleSaved(toastMessage)}
               onDirtyChange={setDirty}
               onErrorCode={showError}

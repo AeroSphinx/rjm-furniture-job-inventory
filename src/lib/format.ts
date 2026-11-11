@@ -33,3 +33,16 @@ export function greetingName(fullName: string): string {
   }
   return parts[0] ?? "";
 }
+
+/**
+ * The Dashboard greeting's time-of-day branch (Requirement 7.2), read
+ * against the shop's own clock (`Asia/Manila`) rather than the server's,
+ * so a Dashboard rendered on a UTC host still says "Good morning" at
+ * 8 a.m. in the shop.
+ */
+export function greetingPeriod(date: Date = new Date()): "morning" | "afternoon" | "evening" {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: TZ }).format(date));
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
+}

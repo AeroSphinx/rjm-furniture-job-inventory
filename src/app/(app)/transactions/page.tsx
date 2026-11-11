@@ -9,7 +9,7 @@ import { listMaterialOptions } from "@/lib/queries/materials";
 import { PAGE_SIZE } from "@/lib/constants";
 
 type TransactionsPageProps = {
-  searchParams: Promise<{ q?: string; type?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; page?: string; stockIn?: string }>;
 };
 
 /**
@@ -21,7 +21,7 @@ type TransactionsPageProps = {
 export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
   const profile = await requireUser();
   const t = await getTranslations("Transactions");
-  const { q = "", type = "", page: pageParam } = await searchParams;
+  const { q = "", type = "", page: pageParam, stockIn } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
   const supabase = await getServerClient();
@@ -44,6 +44,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
         role={profile.role}
         materials={materials}
         jobs={jobs}
+        preselectMaterialId={stockIn}
       />
     </div>
   );

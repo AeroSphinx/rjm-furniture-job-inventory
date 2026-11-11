@@ -34,6 +34,11 @@ type SharedProps = {
   onErrorCode?: OnErrorCode;
 };
 
+type StockInProps = SharedProps & {
+  /** Pre-selects a material when the form opens from the Low-Stock Alerts screen's "Record stock in" link (Requirement 13.8). */
+  defaultMaterialId?: string;
+};
+
 /**
  * "Record Stock In" (Requirement 11.3, 12.6, 12.12-12.13). Type-aware
  * between a plain `stock_in` and the `adjustment` correction path
@@ -42,14 +47,14 @@ type SharedProps = {
  * §12); never re-implements the row lock or the quantity guard the RPC
  * owns.
  */
-function StockInForm({ materials, onSaved, onDirtyChange, onErrorCode }: SharedProps) {
+function StockInForm({ materials, defaultMaterialId, onSaved, onDirtyChange, onErrorCode }: StockInProps) {
   const t = useTranslations("Transactions");
   const tRoot = useTranslations();
   const [pending, setPending] = useState(false);
 
   const form = useForm<StockInFormValues>({
     resolver: zodResolver(StockInSchema),
-    defaultValues: { material_id: "", type: "stock_in", direction: undefined, quantity: "", reason: "" },
+    defaultValues: { material_id: defaultMaterialId ?? "", type: "stock_in", direction: undefined, quantity: "", reason: "" },
   });
   const values = form.watch();
   const selectedUnit = materials.find((m) => m.id === values.material_id)?.unit;
@@ -319,6 +324,7 @@ type StockMovementFormProps = {
   materials: MaterialOption[];
   jobs?: JobOption[];
   jobRequired?: boolean;
+  defaultMaterialId?: string;
   onSaved: OnSaved;
   onDirtyChange?: (dirty: boolean) => void;
   onErrorCode?: OnErrorCode;
@@ -330,9 +336,17 @@ type StockMovementFormProps = {
  * than two unrelated forms, since both call the same RPC and share the
  * material picker (design §20, Requirement 4.4).
  */
-function StockMovementForm({ mode, materials, jobs = [], jobRequired = false, onSaved, onDirtyChange, onErrorCode }: StockMovementFormProps) {
+function StockMovementForm({ mode, materials, jobs = [], jobRequired = false, defaultMaterialId, onSaved, onDirtyChange, onErrorCode }: StockMovementFormProps) {
   if (mode === "stock_in") {
-    return <StockInForm materials={materials} onSaved={onSaved} onDirtyChange={onDirtyChange} onErrorCode={onErrorCode} />;
+    return (
+      <StockInForm
+        materials={materials}
+        defaultMaterialId={defaultMaterialId}
+        onSaved={onSaved}
+        onDirtyChange={onDirtyChange}
+        onErrorCode={onErrorCode}
+      />
+    );
   }
   return (
     <StockOutForm

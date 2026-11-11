@@ -280,42 +280,42 @@ Migration 0012 (2.12) is `[STRETCH]` and can be done whenever a gap opens on Day
 
 ## Phase 5 — Dashboard, Low-Stock Alerts, Reports, CSV and print
 
-- [ ] 5.1 [MUST] Build the Dashboard greeting, KPI grid and quick actions
+- [x] 5.1 [MUST] Build the Dashboard greeting, KPI grid and quick actions
   - `GreetingCard` using `greetingName()`; the six `StatCard`s fed by `dashboard_summary()`; role-filtered quick actions (hidden, not disabled, for a worker); `loading.tsx` plus per-section `<Suspense>` for the three streaming children.
   - Requirements: 7.1–7.6, 7.11–7.13
   - Indicators: 7, 8, 11, 15
 
-- [ ] 5.2 [MUST] Build the Recent Job Orders, Job Status Overview and Recent Inventory Activity panels
+- [x] 5.2 [MUST] Build the Recent Job Orders, Job Status Overview and Recent Inventory Activity panels
   - Recent jobs table with a "View all jobs →" link; one progress bar per job status present in the data (up to four, per the amended Requirement 7.8); recent-activity rows with a direction icon and the "Stock Out · 12 board ft · JO-2026-018" line shape.
   - Requirements: 7.7–7.10
   - Indicators: 7, 8, 14, 15
 
-- [ ] 5.3 [MUST] Build the Low-Stock Alerts screen
+- [x] 5.3 [MUST] Build the Low-Stock Alerts screen
   - `/alerts`: the computed banner and the two advisory notices; the table sorted out-of-stock-first then by shortfall (the `v_material_status` order from design §20); "Record stock in" link (absent for a worker); a positive empty state when nothing is short.
   - Requirements: 13.1–13.10
   - Indicators: 7, 9, 15, 21
 
-- [ ] 5.4 [MUST] Build the Reports screen (on-screen)
+- [x] 5.4 [MUST] Build the Reports screen (on-screen)
   - `/reports` (owner/admin only): the date-range preset select, Job Order Summary tiles, Inventory Summary, Most Frequently Used Materials, Low-Stock Materials Report, the fixed footer line; `report_summary()` wired through.
   - Requirements: 14.1–14.9, 14.12–14.14
   - Indicators: 7, 15, 16
 
-- [ ] 5.5 [SHOULD] Add CSV export to Reports
+- [x] 5.5 [SHOULD] Add CSV export to Reports
   - "Export CSV" button; `src/lib/csv.ts` escaping commas, quotes and newlines; filename containing the selected range.
   - Requirements: 14.10
   - Indicators: 8
 
-- [ ] 5.6 [SHOULD] Add the print stylesheet for Reports
+- [x] 5.6 [SHOULD] Add the print stylesheet for Reports
   - `@media print` rules hiding the sidebar/top bar/toolbars, keeping the brand header, A4 portrait, repeating table header rows.
   - Requirements: 14.11
   - Indicators: 13, 14
 
-- [ ] 5.7 [MUST] Wire the sidebar Low-Stock badge to the same computed source
+- [x] 5.7 [MUST] Wire the sidebar Low-Stock badge to the same computed source
   - Badge reads the same `v_material_status` count the Alerts banner and table use, with an assistive-technology text equivalent; confirm no count anywhere in the app is hardcoded.
   - Requirements: 6.2, 13.3
   - Indicators: 2, 9
 
-- [ ] 5.8 [MUST] Append the Phase 5 sections to the two running documents
+- [x] 5.8 [MUST] Append the Phase 5 sections to the two running documents
   - Add the Phase 5 entries to `docs/design-rationale.md` (the alerts-count and status-bar deviations) and `docs/evaluation-traceability.md` (evidence for indicators 2, 7, 8, 9, 13, 14, 15, 16, 21 advanced so far).
   - Requirements: 25.2, 25.4, 25.11
   - Indicators: 17, 19
