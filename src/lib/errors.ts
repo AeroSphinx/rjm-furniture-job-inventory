@@ -8,14 +8,19 @@
  */
 export type ActionResult<T> =
   | { ok: true; data: T }
-  | { ok: false; code: ErrorCode; fieldErrors?: Record<string, string> };
+  | {
+      ok: false;
+      code: ErrorCode;
+      fieldErrors?: Record<string, string>;
+      /** Parsed `error.details` JSON (design §12.5/§18.2) — `INSUFFICIENT_STOCK`'s `available`/`requested`/`unit`/`material` values, used to interpolate the toast. */
+      detail?: Record<string, string | number>;
+    };
 
 /**
- * The subset of design §18.2's error table this phase's RPCs
- * (`create_job_order`, `update_job_order`, `update_job_status`) and the
- * plain `customers` writes can actually raise. Phase 4 (task 4.5) adds
- * the stock-movement codes from design §12.5/§18.2 to this same table —
- * nothing here needs to change for that, only grow.
+ * Design §18.2's error table, grown phase by phase rather than replaced:
+ * Phase 3's job/customer codes, plus Phase 4's stock-movement codes from
+ * design §12.5 (`record_stock_movement`) and `upsert_material`'s own
+ * `INVALID_INPUT`/`MATERIAL_NAME_TAKEN`.
  */
 export type ErrorCode =
   | "NOT_PERMITTED"
@@ -30,7 +35,20 @@ export type ErrorCode =
   | "CUSTOMER_NAME_TAKEN"
   | "RELATED_RECORD_MISSING"
   | "NETWORK"
-  | "UNEXPECTED";
+  | "UNEXPECTED"
+  | "AUTH_REQUIRED"
+  | "INVALID_TYPE"
+  | "INVALID_QUANTITY"
+  | "INVALID_DIRECTION"
+  | "REASON_REQUIRED"
+  | "MATERIAL_NOT_FOUND"
+  | "JOB_REQUIRED"
+  | "OUT_OF_STOCK"
+  | "INSUFFICIENT_STOCK"
+  | "MATERIAL_NAME_TAKEN"
+  | "INVALID_INPUT";
+
+type SupabaseErrorLike = { message?: string; code?: string; details?: string } | null | undefined;
 
 /**
  * Maps a Postgres/PostgREST error (an RPC's `raise exception` message, or
@@ -38,11 +56,11 @@ export type ErrorCode =
  * in this schema raise a bare code as the exception message (design
  * §13.1-§13.2: `raise exception 'NOT_PERMITTED' using errcode = 'P0001'`),
  * so the message itself is already the code — no parsing of `detail` is
- * needed for this phase's forms, which show one error per failure rather
- * than per field from the server (client-side zod already catches the
- * field-level cases before the request is sent).
+ * needed to pick the code (client-side zod already catches the
+ * field-level cases before the request is sent); `parseErrorDetail`
+ * below is only for the two stock codes whose toast names real numbers.
  */
-export function mapSupabaseError(error: { message?: string; code?: string } | null | undefined): ErrorCode {
+export function mapSupabaseError(error: SupabaseErrorLike): ErrorCode {
   const message = error?.message ?? "";
 
   const known: ErrorCode[] = [
@@ -54,6 +72,17 @@ export function mapSupabaseError(error: { message?: string; code?: string } | nu
     "JOB_NOT_ASSIGNED",
     "JOB_COMPLETED",
     "CODE_GENERATION_FAILED",
+    "AUTH_REQUIRED",
+    "INVALID_TYPE",
+    "INVALID_QUANTITY",
+    "INVALID_DIRECTION",
+    "REASON_REQUIRED",
+    "MATERIAL_NOT_FOUND",
+    "JOB_REQUIRED",
+    "OUT_OF_STOCK",
+    "INSUFFICIENT_STOCK",
+    "MATERIAL_NAME_TAKEN",
+    "INVALID_INPUT",
   ];
   for (const code of known) {
     if (message.includes(code)) return code;
@@ -64,6 +93,25 @@ export function mapSupabaseError(error: { message?: string; code?: string } | nu
   if (error?.code === "42501" || error?.code === "PGRST116") return "NOT_PERMITTED";
 
   return "UNEXPECTED";
+}
+
+/**
+ * `record_stock_movement`'s `OUT_OF_STOCK`/`INSUFFICIENT_STOCK` codes
+ * (design §12.2 step 7) carry a JSON `detail` string with the real
+ * numbers — `available`, `requested`, `unit`, `material` — so the toast
+ * can say "Only 6 board ft of Mahogany Lumber are available" instead of
+ * a generic refusal. Every other code in this file's table needs no
+ * detail, so callers that do not need it can simply ignore this.
+ */
+export function parseErrorDetail(error: SupabaseErrorLike): Record<string, string | number> | undefined {
+  const raw = error?.details;
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, string | number>) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
