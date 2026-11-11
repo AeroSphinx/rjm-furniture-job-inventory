@@ -62,7 +62,7 @@ from (values
   ('MAT-003', '2" Common Nails', 'Fasteners', 'kg', 0, 5),
   ('MAT-004', '1.5" Wood Screws', 'Fasteners', 'boxes', 14, 8),
   ('MAT-005', 'Narra Lumber', 'Lumber', 'board ft', 47, 15),
-  ('MAT-006', '120-Grit Sandpaper', 'Finishing', 'liters', 34, 20),
+  ('MAT-006', '120-Grit Sandpaper', 'Finishing', 'sheets', 34, 20),
   ('MAT-007', 'Gmelina Lumber', 'Lumber', 'board ft', 27, 7),
   ('MAT-008', 'Wood Glue', 'Adhesives', 'liters', 6, 8),
   ('MAT-009', 'Acacia Lumber', 'Lumber', 'board ft', 44, 14),
