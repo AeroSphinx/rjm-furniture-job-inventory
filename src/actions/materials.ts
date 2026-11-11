@@ -70,6 +70,7 @@ export async function softDeleteMaterial(materialId: string): Promise<ActionResu
   if (error) return { ok: false, code: mapSupabaseError(error) };
 
   revalidatePath("/inventory");
+  revalidatePath("/dashboard");
   return { ok: true, data: { id: materialId } };
 }
 
@@ -82,5 +83,6 @@ export async function restoreMaterial(materialId: string): Promise<ActionResult<
   if (error) return { ok: false, code: mapSupabaseError(error) };
 
   revalidatePath("/inventory");
+  revalidatePath("/dashboard");
   return { ok: true, data: { id: materialId } };
 }
