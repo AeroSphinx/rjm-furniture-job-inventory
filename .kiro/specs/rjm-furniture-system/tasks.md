@@ -208,32 +208,32 @@ Migration 0012 (2.12) is `[STRETCH]` and can be done whenever a gap opens on Day
 
 ## Phase 3 — Job Orders and customers
 
-- [ ] 3.1 [MUST] Build the Job Orders list screen
+- [x] 3.1 [MUST] Build the Job Orders list screen
   - `/jobs`: `SectionCard` header with the computed "N records · Updated just now" line; `Toolbar` (search + "Job Status: All" + "+ Add New Job Order"); `DataTable` with the eight fixed columns; `PAGE_SIZE = 5` pagination; `EmptyState` naming the search and offering "Clear filters".
   - Requirements: 8.1–8.13
   - Indicators: 7, 8, 11, 12, 21
 
-- [ ] 3.2 [MUST] Build the job order create/edit form and the customer picker
+- [x] 3.2 [MUST] Build the job order create/edit form and the customer picker
   - `JobForm` (client), `src/schemas/job.ts`, wired to `create_job_order`/`update_job_order`; duplicate-customer warning; unsaved-changes guard; `StepForm` when the form has more than six fields or Simple mode is on.
   - Requirements: 9.1–9.11, 9.13, 20.5
   - Indicators: 8, 9, 10, 21
 
-- [ ] 3.3 [MUST] Build the Customers screen and the customer create/edit dialog
+- [x] 3.3 [MUST] Build the Customers screen and the customer create/edit dialog
   - `/customers` (staff only, the sidebar's indented sub-item): list plus "+ Add Customer" dialog; soft delete so a customer's past jobs stay visible (the inner join in `v_jobs_list` already keeps them, per design §7.3).
   - Requirements: 9.10–9.12
   - Indicators: 15, 16
 
-- [ ] 3.4 [MUST] Build the job order detail view
+- [x] 3.4 [MUST] Build the job order detail view
   - `/jobs/[id]`: job details, assigned worker, the `job_status_history` panel, the list of materials issued to the job (its `stock_out` rows); price/cost fields rendered only for staff.
   - Requirements: 3.4–3.7, 9.12
   - Indicators: 7, 15, 16
 
-- [ ] 3.5 [MUST] Implement worker status-only editing and soft delete with Undo
+- [x] 3.5 [MUST] Implement worker status-only editing and soft delete with Undo
   - The worker's edit form shows only the status control, limited to jobs assigned to them, blocked once a job is `completed`; owner/admin delete confirmation naming the record, soft delete via `deleted_at`, and an 8-second Undo toast.
   - Requirements: 3.4–3.8, 9.8, 20.1–20.3, 20.12
   - Indicators: 9, 16, 20
 
-- [ ] 3.6 [MUST] Append the Phase 3 sections to the two running documents
+- [x] 3.6 [MUST] Append the Phase 3 sections to the two running documents
   - Add the Phase 3 entries to `docs/design-rationale.md` and `docs/evaluation-traceability.md` (evidence for indicators 7, 8, 9, 10, 11, 12, 15, 16, 20, 21 advanced so far).
   - Requirements: 25.2, 25.4, 25.11
   - Indicators: 17, 19

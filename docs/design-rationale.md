@@ -131,7 +131,96 @@ prose — that table predates this phase and was left untouched (Phase 2's
 scope is migrations, seed scripts and Settings, not rewriting Phase 1/0's
 design document), but no file this phase adds repeats them.
 
-## Phase 3 onward
+## Phase 3 — Job Orders and customers
 
-_Appended as each later phase closes out (tasks 3.6, 4.6, 5.8, 6.10,
-6.17)._
+**A real bug in `update_job_order()` found by exercising the screen, not
+by reading the SQL.** Migration `0009_job_material_rpcs.sql`'s
+`update_job_order()` declares `returns table (job_id uuid, job_code text,
+old_status text, new_status text)`, and PL/pgSQL treats those four names
+as variables in scope for the whole function body — the same class of bug
+Phase 2 already found once in `record_stock_movement()`'s `unit` column
+(see that phase's section above). Two statements in `update_job_order()`
+read or wrote `jobs`/`job_pricing` columns with the same bare names as
+those output variables: `select job_code, status into v_old from
+public.jobs where id = p_job_id …` and `delete from public.job_pricing
+where job_id = p_job_id`. Both raised `column reference "…" is ambiguous`
+(Postgres error `42702`) on every real edit, which the server action
+mapped to the generic `UNEXPECTED` code — so the symptom on screen was
+simply "Save does nothing, no toast, dialog stays open," with no field
+error and no visible exception. This was found by the Phase 3 smoke test
+actually editing a job order end to end against the live dev project, not
+by a second reading of the migration file; a static review of the SQL
+reads correctly at a glance, which is exactly why this bug class keeps
+recurring and why it is recorded here a second time. Fixed by qualifying
+both references to a table alias (`select j.job_code, j.status into v_old
+from public.jobs j where j.id = p_job_id …` and `delete from
+public.job_pricing jp where jp.job_id = p_job_id`), committed as an
+amendment to migration `0009_job_material_rpcs.sql` itself (the file is a
+`create or replace function`, so re-applying it is idempotent) and
+pushed to the live dev project. `create_job_order()` and
+`update_job_status()` were checked against the same pattern and do not
+have it: neither reads an unqualified column whose name collides with
+one of its own output parameters.
+
+**The job order form is always a `StepForm`, never conditionally so.**
+Requirement 9.7 asks for steps "when the form has more than six fields,
+or Simple mode is on." The staff create/edit form has eight (customer,
+project name, description, order date, expected completion, assigned
+worker, status, quoted price), which is unconditionally over six, so
+`JobForm` has no branch that ever renders a flat form — the condition in
+the requirement is satisfied by the field count alone for every session.
+`StepForm` (design §6.2) was built in Phase 1 but had no caller until this
+phase; it needed one small, backward-compatible addition here — an
+optional controlled `step`/`onStepChange` pair, defaulting to the
+component's own internal state when omitted — so that a failed
+submission can jump the wizard to the step holding the first invalid
+field before calling `setFocus` (Requirement 9.5's "move focus to the
+first field in error" cannot land on a field whose step is not the one
+currently showing). No existing caller of `StepForm` was broken by this,
+because there were none yet.
+
+**The worker's status-only form is one component, used in two places.**
+`JobStatusForm` renders the plain-words restriction statement
+(Requirement 9.8) and the single status control; it is opened both from
+the Job Orders list's Edit action and from the job detail page's "Update
+status" button, so a worker sees the identical control and the identical
+restriction copy regardless of which screen they started from, and a
+future change to that copy only has one place to happen. The disabled
+reason shown inside it (`JOB_NOT_ASSIGNED` or `JOB_COMPLETED`, from the
+`Errors` message namespace) satisfies the task's "disabled with a visible
+explanation" requirement in the same place for both entry points.
+
+**Soft delete and Undo go through the plain `jobs_update_staff` grant,
+not a function**, exactly as design §13.5 specifies — `softDeleteJob` and
+`restoreJob` in `src/actions/jobs.ts` are a symmetrical `set deleted_at =
+now()` / `set deleted_at = null` through PostgREST, which is what keeps
+Undo a trivial inverse of the delete rather than a second code path.
+
+**Error handling for this phase's RPCs is deliberately smaller than
+design §18.2's full table.** `src/lib/errors.ts` was created in this
+phase with the `ActionResult<T>` shape and the subset of error codes
+`create_job_order`, `update_job_order` and `update_job_status` can
+actually raise (`NOT_PERMITTED`, `CUSTOMER_NOT_FOUND`,
+`ASSIGNEE_NOT_FOUND`, `INVALID_STATUS`, `JOB_NOT_FOUND`,
+`JOB_NOT_ASSIGNED`, `JOB_COMPLETED`, `CODE_GENERATION_FAILED`, plus the
+generic `NETWORK`/`UNEXPECTED`/`VALIDATION`). Task 4.5 is where the full
+design §12.5 stock-RPC error map gets added to this same file — nothing
+built here needs to change for that, only grow, because the file's shape
+(one `ErrorCode` union, one `mapSupabaseError()` function, one
+`errorCodeToKey()` helper turning `NOT_PERMITTED` into the `Errors`
+namespace's `notPermitted` key) is the same shape design §18.2 describes
+for the whole table.
+
+**The job detail page shows exactly what Requirement 9.12 asks for, no
+more.** Status history renders `from → to` transitions with a timestamp,
+not who made the change — the schema design's own §13.4 note says "where
+available," and a `changed_by` → profile name join was judged not worth
+the extra query for a line that is never more than one or two rows deep
+on a four-day clock (brief ADDENDUM 2's "prefer the simplest design").
+Materials issued to the job reuse `v_transactions_list` filtered to
+`type = 'stock_out'`, which already carries no cost column, so the panel
+needed no new query shape and no new leak surface to reason about.
+
+## Phase 4 onward
+
+_Appended as each later phase closes out (tasks 4.6, 5.8, 6.10, 6.17)._
