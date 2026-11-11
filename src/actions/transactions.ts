@@ -20,6 +20,7 @@ function revalidateAfterMovement(jobId?: string | null) {
   revalidatePath("/inventory");
   revalidatePath("/jobs");
   revalidatePath("/dashboard");
+  revalidatePath("/alerts");
   if (jobId) revalidatePath(`/jobs/${jobId}`);
 }
 

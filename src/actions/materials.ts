@@ -43,6 +43,7 @@ export async function upsertMaterialAction(
   revalidatePath("/inventory");
   revalidatePath("/transactions");
   revalidatePath("/dashboard");
+  revalidatePath("/alerts");
   return {
     ok: true,
     data: {
@@ -71,6 +72,7 @@ export async function softDeleteMaterial(materialId: string): Promise<ActionResu
 
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
+  revalidatePath("/alerts");
   return { ok: true, data: { id: materialId } };
 }
 
@@ -84,5 +86,6 @@ export async function restoreMaterial(materialId: string): Promise<ActionResult<
 
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
+  revalidatePath("/alerts");
   return { ok: true, data: { id: materialId } };
 }
