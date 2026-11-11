@@ -89,10 +89,20 @@ function JobsPageClient({
     router.refresh();
   }
 
-  function handleUpdated(code: string) {
+  function handleUpdated(result: { job_code: string; old_status?: string; new_status?: string }) {
     setFormOpen(false);
     setDirty(false);
-    toast.success(t("updateSuccessToast", { code }));
+    if (result.old_status && result.new_status && result.old_status !== result.new_status) {
+      toast.success(
+        t("statusChangeToast", {
+          code: result.job_code,
+          oldStatus: tStatus(JOB_STATUS_KEYS[result.old_status as JobStatus] ?? "jobPending"),
+          newStatus: tStatus(JOB_STATUS_KEYS[result.new_status as JobStatus] ?? "jobPending"),
+        }),
+      );
+    } else {
+      toast.success(t("updateSuccessToast", { code: result.job_code }));
+    }
     router.refresh();
   }
 
@@ -183,6 +193,7 @@ function JobsPageClient({
           <Button type="button" variant="ghost" size="icon" aria-label={t("viewAction", { code: row.job_code })} asChild>
             <Link href={`/jobs/${row.id}`}>
               <Eye className="size-4" aria-hidden />
+              <span className="icon-btn-label">{tCommon("view")}</span>
             </Link>
           </Button>
           <Button
@@ -193,6 +204,7 @@ function JobsPageClient({
             onClick={() => openEdit(row)}
           >
             <Pencil className="size-4" aria-hidden />
+            <span className="icon-btn-label">{tCommon("edit")}</span>
           </Button>
           {role !== "worker" && (
             <Button
@@ -203,6 +215,7 @@ function JobsPageClient({
               onClick={() => setConfirmingDelete(row)}
             >
               <Trash2 className="size-4" aria-hidden />
+              <span className="icon-btn-label">{tCommon("delete")}</span>
             </Button>
           )}
         </div>
@@ -252,6 +265,8 @@ function JobsPageClient({
                 </Button>
               ) : undefined
             }
+            resultCount={totalCount}
+            resultCountLabel={(count) => tCommon("recordCount", { count })}
           />
           <DataTable
             columns={columns}
@@ -311,7 +326,7 @@ function JobsPageClient({
               }}
               customers={customers}
               workers={workers}
-              onSaved={(result) => handleUpdated((result as { job_code: string }).job_code)}
+              onSaved={(result) => handleUpdated(result as { job_code: string; old_status?: string; new_status?: string })}
               onDirtyChange={setDirty}
               onErrorCode={showError}
             />

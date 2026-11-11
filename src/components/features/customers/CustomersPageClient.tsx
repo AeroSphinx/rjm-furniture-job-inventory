@@ -118,6 +118,7 @@ function CustomersPageClient({
             onClick={() => openEdit(row)}
           >
             <Pencil className="size-4" aria-hidden />
+            <span className="icon-btn-label">{tCommon("edit")}</span>
           </Button>
           <Button
             type="button"
@@ -127,6 +128,7 @@ function CustomersPageClient({
             onClick={() => setConfirmingDelete(row)}
           >
             <Trash2 className="size-4" aria-hidden />
+            <span className="icon-btn-label">{tCommon("delete")}</span>
           </Button>
         </div>
       ),
@@ -166,6 +168,8 @@ function CustomersPageClient({
                 {t("addButton")}
               </Button>
             }
+            resultCount={totalCount}
+            resultCountLabel={(count) => tCommon("recordCount", { count })}
           />
           <DataTable
             columns={columns}

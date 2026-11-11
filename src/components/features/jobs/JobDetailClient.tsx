@@ -72,9 +72,19 @@ function JobDetailClient({
     router.refresh();
   }
 
-  function handleUpdated(code: string) {
+  function handleUpdated(result: { job_code: string; old_status?: string; new_status?: string }) {
     setFormOpen(false);
-    toast.success(t("updateSuccessToast", { code }));
+    if (result.old_status && result.new_status && result.old_status !== result.new_status) {
+      toast.success(
+        t("statusChangeToast", {
+          code: result.job_code,
+          oldStatus: tStatus(JOB_STATUS_KEYS[result.old_status as JobStatus] ?? "jobPending"),
+          newStatus: tStatus(JOB_STATUS_KEYS[result.new_status as JobStatus] ?? "jobPending"),
+        }),
+      );
+    } else {
+      toast.success(t("updateSuccessToast", { code: result.job_code }));
+    }
     router.refresh();
   }
 
@@ -150,7 +160,7 @@ function JobDetailClient({
               }}
               customers={customers}
               workers={workers}
-              onSaved={(result) => handleUpdated((result as { job_code: string }).job_code)}
+              onSaved={(result) => handleUpdated(result as { job_code: string; old_status?: string; new_status?: string })}
               onErrorCode={showError}
             />
           )}
